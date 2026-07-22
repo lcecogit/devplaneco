@@ -1,0 +1,55 @@
+<svg width="640" height="560" viewBox="0 0 640 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="heroTitle">
+  <title id="heroTitle">Illustration of a delivery van driving past stacked moving boxes, with a route line and location pin</title>
+  <defs>
+    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F2EFFE"/>
+      <stop offset="100%" stop-color="#E4DEFD"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="640" height="560" rx="28" fill="url(#skyGrad)"/>
+
+  <!-- ground -->
+  <ellipse cx="320" cy="470" rx="260" ry="34" fill="#C7BAFB" opacity="0.55"/>
+
+  <!-- dashed route -->
+  <path d="M70 400 C 180 340, 260 460, 380 400 S 560 320, 590 260" fill="none" stroke="#8069EE" stroke-width="5" stroke-dasharray="2 16" stroke-linecap="round"/>
+
+  <!-- route pin -->
+  <g transform="translate(566,206)">
+    <path d="M24 0C10.7 0 0 10.7 0 24c0 18 24 46 24 46s24-28 24-46C48 10.7 37.3 0 24 0Z" fill="#FF6B4A"/>
+    <circle cx="24" cy="24" r="10" fill="#FFFFFF"/>
+  </g>
+
+  <!-- stacked boxes -->
+  <g transform="translate(70,300)">
+    <rect x="0" y="60" width="86" height="70" rx="6" fill="#FFFFFF" stroke="#5B3DF6" stroke-width="3"/>
+    <path d="M0 78 H86 M43 60 V130" stroke="#5B3DF6" stroke-width="3"/>
+    <rect x="14" y="0" width="60" height="60" rx="6" fill="#FF6B4A"/>
+    <path d="M14 20 H74 M44 0 V60" stroke="#C13A1E" stroke-width="3"/>
+  </g>
+
+  <!-- van body -->
+  <g transform="translate(210,270)">
+    <rect x="120" y="10" width="230" height="120" rx="14" fill="#5B3DF6"/>
+    <rect x="136" y="26" width="198" height="60" rx="8" fill="#8069EE"/>
+    <rect x="0" y="60" width="130" height="70" rx="14" fill="#FFFFFF" stroke="#5B3DF6" stroke-width="4"/>
+    <rect x="18" y="76" width="46" height="38" rx="6" fill="#E4DEFD"/>
+    <rect x="345" y="70" width="14" height="40" rx="6" fill="#291686"/>
+
+    <!-- wheels -->
+    <circle cx="90" cy="140" r="26" fill="#0F1024"/>
+    <circle cx="90" cy="140" r="11" fill="#E4DEFD"/>
+    <circle cx="300" cy="140" r="26" fill="#0F1024"/>
+    <circle cx="300" cy="140" r="11" fill="#E4DEFD"/>
+
+    <!-- brand mark on van -->
+    <rect x="150" y="42" width="150" height="30" rx="6" fill="#FFFFFF" opacity="0.16"/>
+  </g>
+
+  <!-- small mint confirmation badge -->
+  <g transform="translate(120,170)">
+    <circle cx="26" cy="26" r="26" fill="#12BD79"/>
+    <path d="M15 27l8 8 16-18" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
