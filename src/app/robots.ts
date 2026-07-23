@@ -17,6 +17,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
+      // Gated application areas, not marketing content — keep these out of
+      // the index even once public indexing is switched on generally.
+      disallow: ["/partner/", "/admin/"],
     },
     sitemap: `${siteConfig.url}/sitemap.xml`,
   };
