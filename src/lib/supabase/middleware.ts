@@ -18,7 +18,14 @@ const PUBLIC_ADMIN_PATHS = ["/admin/login"];
 // all. Must run in src/middleware.ts — this file only holds the logic so it
 // can be unit-tested independently of the Next.js middleware API.
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  // A single response object, mutated in place. Supabase's own docs sample
+  // reassigns `response = NextResponse.next({ request })` a second time
+  // inside setAll() — on Vercel's Edge runtime that's harmless, but under
+  // Hostinger's LiteSpeed Node.js proxy it caused ERR_HTTP_HEADERS_SENT on
+  // nearly every request (confirmed via runtime logs): the response
+  // identity changing mid-request triggers a second header-write attempt
+  // after the first has already been sent.
+  const response = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(supabaseUrl, supabasePublishableKey, {
     cookies: {
@@ -26,11 +33,9 @@ export async function updateSession(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          response.cookies.set(name, value, options)
-        );
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options);
+        });
       },
     },
   });
