@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardChrome } from "@/components/partner/DashboardChrome";
+import { ClientRedirect } from "@/components/ClientRedirect";
 
 // Role gate for everything under /partner/(dashboard)/* — middleware already
 // guarantees a session exists for these paths; this checks the specific
@@ -16,7 +16,7 @@ export default async function PartnerDashboardLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/partner/login");
+    return <ClientRedirect to="/partner/login" />;
   }
 
   const { data: profile } = await supabase
@@ -26,7 +26,7 @@ export default async function PartnerDashboardLayout({
     .maybeSingle();
 
   if (!profile || profile.role !== "partner") {
-    redirect("/partner/login");
+    return <ClientRedirect to="/partner/login" />;
   }
 
   const { data: partner } = await supabase
@@ -36,7 +36,7 @@ export default async function PartnerDashboardLayout({
     .maybeSingle();
 
   if (!partner) {
-    redirect("/partner/signup/business");
+    return <ClientRedirect to="/partner/signup/business" />;
   }
 
   return <DashboardChrome businessName={partner.business_name}>{children}</DashboardChrome>;

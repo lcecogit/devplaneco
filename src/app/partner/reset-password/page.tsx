@@ -1,8 +1,8 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { UpdatePasswordForm } from "@/components/auth/UpdatePasswordForm";
+import { ClientRedirect } from "@/components/ClientRedirect";
 
 export const metadata: Metadata = {
   title: "Set a New Password",
@@ -17,7 +17,7 @@ export default async function PartnerResetPasswordPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/partner/forgot-password");
+    return <ClientRedirect to="/partner/forgot-password" />;
   }
 
   return (

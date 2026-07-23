@@ -1,8 +1,8 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { BusinessInfoForm } from "@/components/auth/BusinessInfoForm";
+import { ClientRedirect } from "@/components/ClientRedirect";
 
 export const metadata: Metadata = {
   title: "Tell us about your business",
@@ -18,7 +18,7 @@ export default async function PartnerSignupBusinessPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/partner/login");
+    return <ClientRedirect to="/partner/login" />;
   }
 
   const { data: partner } = await supabase
@@ -28,7 +28,7 @@ export default async function PartnerSignupBusinessPage() {
     .maybeSingle();
 
   if (partner) {
-    redirect("/partner/dashboard");
+    return <ClientRedirect to="/partner/dashboard" />;
   }
 
   return (

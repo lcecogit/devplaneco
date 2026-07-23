@@ -1,8 +1,8 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { UpdatePasswordForm } from "@/components/auth/UpdatePasswordForm";
+import { ClientRedirect } from "@/components/ClientRedirect";
 
 export const metadata: Metadata = { title: "Set Your Password" };
 
@@ -15,7 +15,7 @@ export default async function AdminResetPasswordPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/admin/login");
+    return <ClientRedirect to="/admin/login" />;
   }
 
   return (

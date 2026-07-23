@@ -1,8 +1,8 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AuthCard } from "@/components/auth/AuthCard";
+import { ClientRedirect } from "@/components/ClientRedirect";
 
 export const metadata: Metadata = {
   title: "You're in",
@@ -15,7 +15,7 @@ export default async function PartnerSignupCompletePage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/partner/login");
+    return <ClientRedirect to="/partner/login" />;
   }
 
   const { data: partner } = await supabase
@@ -25,7 +25,7 @@ export default async function PartnerSignupCompletePage() {
     .maybeSingle();
 
   if (!partner) {
-    redirect("/partner/signup/business");
+    return <ClientRedirect to="/partner/signup/business" />;
   }
 
   return (

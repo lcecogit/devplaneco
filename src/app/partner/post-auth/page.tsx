@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ClientRedirect } from "@/components/ClientRedirect";
 
 // Landing spot after any partner auth flow (password login, OAuth callback,
 // magic-link callback). Decides where the user actually belongs: mid-signup
@@ -13,7 +13,7 @@ export default async function PartnerPostAuthPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/partner/login");
+    return <ClientRedirect to="/partner/login" />;
   }
 
   const { data: partner } = await supabase
@@ -23,8 +23,8 @@ export default async function PartnerPostAuthPage() {
     .maybeSingle();
 
   if (!partner) {
-    redirect("/partner/signup/business");
+    return <ClientRedirect to="/partner/signup/business" />;
   }
 
-  redirect("/partner/dashboard");
+  return <ClientRedirect to="/partner/dashboard" />;
 }

@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { ClientRedirect } from "@/components/ClientRedirect";
 
 export default function WorkIndexPage() {
-  redirect("/partner/work/my-work");
+  return <ClientRedirect to="/partner/work/my-work" />;
 }

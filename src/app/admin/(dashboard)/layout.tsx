@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AdminChrome } from "@/components/admin/AdminChrome";
+import { ClientRedirect } from "@/components/ClientRedirect";
 
 export default async function AdminDashboardLayout({
   children,
@@ -13,7 +13,7 @@ export default async function AdminDashboardLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/admin/login");
+    return <ClientRedirect to="/admin/login" />;
   }
 
   const { data: profile } = await supabase
@@ -23,7 +23,7 @@ export default async function AdminDashboardLayout({
     .maybeSingle();
 
   if (!profile || profile.role !== "admin") {
-    redirect("/admin/login");
+    return <ClientRedirect to="/admin/login" />;
   }
 
   return <AdminChrome>{children}</AdminChrome>;
