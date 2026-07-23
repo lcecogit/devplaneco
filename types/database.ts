@@ -103,8 +103,10 @@ export type Database = {
           job_id: string | null
           reason: string | null
           reservation_id: string | null
+          resolution: string | null
           transport_partner_id: string
           updated_at: string
+          waived: boolean
         }
         Insert: {
           amount: number
@@ -114,8 +116,10 @@ export type Database = {
           job_id?: string | null
           reason?: string | null
           reservation_id?: string | null
+          resolution?: string | null
           transport_partner_id: string
           updated_at?: string
+          waived?: boolean
         }
         Update: {
           amount?: number
@@ -125,8 +129,10 @@ export type Database = {
           job_id?: string | null
           reason?: string | null
           reservation_id?: string | null
+          resolution?: string | null
           transport_partner_id?: string
           updated_at?: string
+          waived?: boolean
         }
         Relationships: [
           {
@@ -1250,6 +1256,9 @@ export type Database = {
       }
       vehicles: {
         Row: {
+          admin_note: string | null
+          admin_reviewed_at: string | null
+          admin_reviewed_by: string | null
           approval_status: Database["public"]["Enums"]["vehicle_approval_status"]
           base_lat: number | null
           base_lng: number | null
@@ -1267,6 +1276,7 @@ export type Database = {
           payload_kg: number | null
           photo_url: string | null
           registration_number: string
+          rejection_reason: string | null
           transport_partner_id: string
           updated_at: string
           uses_trailer: boolean
@@ -1274,6 +1284,9 @@ export type Database = {
           vehicle_type: string | null
         }
         Insert: {
+          admin_note?: string | null
+          admin_reviewed_at?: string | null
+          admin_reviewed_by?: string | null
           approval_status?: Database["public"]["Enums"]["vehicle_approval_status"]
           base_lat?: number | null
           base_lng?: number | null
@@ -1291,6 +1304,7 @@ export type Database = {
           payload_kg?: number | null
           photo_url?: string | null
           registration_number: string
+          rejection_reason?: string | null
           transport_partner_id: string
           updated_at?: string
           uses_trailer?: boolean
@@ -1298,6 +1312,9 @@ export type Database = {
           vehicle_type?: string | null
         }
         Update: {
+          admin_note?: string | null
+          admin_reviewed_at?: string | null
+          admin_reviewed_by?: string | null
           approval_status?: Database["public"]["Enums"]["vehicle_approval_status"]
           base_lat?: number | null
           base_lng?: number | null
@@ -1315,6 +1332,7 @@ export type Database = {
           payload_kg?: number | null
           photo_url?: string | null
           registration_number?: string
+          rejection_reason?: string | null
           transport_partner_id?: string
           updated_at?: string
           uses_trailer?: boolean
@@ -1322,6 +1340,13 @@ export type Database = {
           vehicle_type?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "vehicles_admin_reviewed_by_fkey"
+            columns: ["admin_reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vehicles_transport_partner_id_fkey"
             columns: ["transport_partner_id"]
