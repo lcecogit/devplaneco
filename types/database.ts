@@ -465,6 +465,48 @@ export type Database = {
           },
         ]
       }
+      partner_leads: {
+        Row: {
+          business_name: string
+          company_type: string | null
+          contact_name: string
+          coverage_area: string | null
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          phone: string | null
+          status: Database["public"]["Enums"]["lead_status"]
+          updated_at: string
+        }
+        Insert: {
+          business_name: string
+          company_type?: string | null
+          contact_name: string
+          coverage_area?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Update: {
+          business_name?: string
+          company_type?: string | null
+          contact_name?: string
+          coverage_area?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -771,6 +813,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      quote_requests: {
+        Row: {
+          collection_postcode: string
+          created_at: string
+          delivery_postcode: string
+          details: string | null
+          email: string
+          full_name: string
+          id: string
+          phone: string | null
+          preferred_date: string | null
+          service_category: string | null
+          status: Database["public"]["Enums"]["lead_status"]
+          updated_at: string
+        }
+        Insert: {
+          collection_postcode: string
+          created_at?: string
+          delivery_postcode: string
+          details?: string | null
+          email: string
+          full_name: string
+          id?: string
+          phone?: string | null
+          preferred_date?: string | null
+          service_category?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Update: {
+          collection_postcode?: string
+          created_at?: string
+          delivery_postcode?: string
+          details?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          preferred_date?: string | null
+          service_category?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Relationships: []
       }
       ratings: {
         Row: {
@@ -1274,6 +1361,7 @@ export type Database = {
         | "arrived_at_delivery"
         | "documentation_complete_delivery"
         | "delivery_complete"
+      lead_status: "new" | "contacted" | "converted" | "archived"
       payment_status: "scheduled" | "pending" | "transferred"
       photo_stage: "collection" | "delivery"
       pmp_status: "active" | "resolved" | "terminated"
@@ -1446,6 +1534,7 @@ export const Constants = {
         "documentation_complete_delivery",
         "delivery_complete",
       ],
+      lead_status: ["new", "contacted", "converted", "archived"],
       payment_status: ["scheduled", "pending", "transferred"],
       photo_stage: ["collection", "delivery"],
       pmp_status: ["active", "resolved", "terminated"],
