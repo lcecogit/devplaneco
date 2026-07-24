@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { SERVICE_CATEGORIES } from "@/components/home/ServicesGrid";
 import { TIME_WINDOW_OPTIONS, type BookableQuote } from "@/lib/quote/quote-state";
 import { isRoomSizedCategory } from "@/lib/pricing/estimate-quote";
+import { assignAllocationMethod } from "@/lib/allocation/assign-method";
 
 function buildWindowTimestamps(preferredDate: string, timeWindow: BookableQuote["timeWindow"]) {
   const option = TIME_WINDOW_OPTIONS.find((w) => w.value === timeWindow) ?? TIME_WINDOW_OPTIONS[3];
@@ -37,6 +38,14 @@ export function ConfirmStep({
 
     const { start, end } = buildWindowTimestamps(quote.preferredDate, quote.timeWindow);
 
+    // Allocation method is decided here, automatically — the customer never
+    // sees or chooses it, and the booking flow looks identical either way.
+    // See lib/allocation/assign-method.ts for the rule and its thresholds.
+    const { allocationMethod, biddingClosesAt } = assignAllocationMethod(
+      quote.category,
+      quote.estimate.priceGBP
+    );
+
     const supabase = createClient();
     const { error: insertError } = await supabase.from("jobs").insert({
       customer_id: customerId,
@@ -57,6 +66,8 @@ export function ConfirmStep({
       distance_miles: quote.estimate.distanceMiles,
       customer_price: quote.estimate.priceGBP,
       matching_status: "listed",
+      allocation_method: allocationMethod,
+      bidding_closes_at: biddingClosesAt,
     });
 
     setSubmitting(false);

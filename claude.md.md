@@ -85,3 +85,19 @@ that isn't actually visible on the page.
 - Use environment variables for all Supabase keys/URLs — never hardcode
 - Comment any GPS, matching, or payment logic clearly — this platform has complex
   business rules and future-me (or future Claude Code sessions) will need the "why"
+
+  ## Progress log
+At the end of every work session or phase, append a new entry to `PROGRESS.md` at
+the project root (create it if it doesn't exist yet). Each entry should be short —
+a few lines, not a full changelog — and cover:
+- What was built (routes, tables, key files)
+- Any non-obvious decisions made and why (e.g. "pricing logic isolated in
+  lib/pricing/estimate-quote.ts so it can be tuned independently")
+- Anything left unfinished or deliberately deferred, so a future session doesn't
+  assume it's done
+Format each entry like:
+### [Date] — [Phase name / short description]
+- Built: ...
+- Key decisions: ...
+- Deferred / not done yet: ...
+Read `PROGRESS.md` at the start of every session, the same way you read this file.

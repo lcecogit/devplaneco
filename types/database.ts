@@ -1,6 +1,3 @@
-// Auto-generated from the live Supabase schema — do not edit by hand.
-// Regenerate with: npm run types:generate
-
 export type Json =
   | string
   | number
@@ -27,6 +24,7 @@ export type Database = {
           submitted_at: string
           transport_partner_id: string
           updated_at: string
+          vehicle_id: string | null
         }
         Insert: {
           amount: number
@@ -37,6 +35,7 @@ export type Database = {
           submitted_at?: string
           transport_partner_id: string
           updated_at?: string
+          vehicle_id?: string | null
         }
         Update: {
           amount?: number
@@ -47,6 +46,7 @@ export type Database = {
           submitted_at?: string
           transport_partner_id?: string
           updated_at?: string
+          vehicle_id?: string | null
         }
         Relationships: [
           {
@@ -61,6 +61,13 @@ export type Database = {
             columns: ["transport_partner_id"]
             isOneToOne: false
             referencedRelation: "transport_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bids_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
         ]
@@ -390,7 +397,10 @@ export type Database = {
       }
       jobs: {
         Row: {
-          allocation_method: Database["public"]["Enums"]["allocation_method"]
+          allocation_method:
+            | Database["public"]["Enums"]["allocation_method"]
+            | null
+          bidding_closes_at: string | null
           category: string | null
           collection_address: string | null
           collection_postcode: string
@@ -407,6 +417,7 @@ export type Database = {
           estimated_duration_minutes: number | null
           id: string
           listed_at: string
+          matching_status: Database["public"]["Enums"]["matching_status"]
           payout_amount: number | null
           status: Database["public"]["Enums"]["job_status"] | null
           title: string
@@ -414,7 +425,10 @@ export type Database = {
           work_type: Database["public"]["Enums"]["work_type"]
         }
         Insert: {
-          allocation_method: Database["public"]["Enums"]["allocation_method"]
+          allocation_method?:
+            | Database["public"]["Enums"]["allocation_method"]
+            | null
+          bidding_closes_at?: string | null
           category?: string | null
           collection_address?: string | null
           collection_postcode: string
@@ -431,6 +445,7 @@ export type Database = {
           estimated_duration_minutes?: number | null
           id?: string
           listed_at?: string
+          matching_status?: Database["public"]["Enums"]["matching_status"]
           payout_amount?: number | null
           status?: Database["public"]["Enums"]["job_status"] | null
           title: string
@@ -438,7 +453,10 @@ export type Database = {
           work_type: Database["public"]["Enums"]["work_type"]
         }
         Update: {
-          allocation_method?: Database["public"]["Enums"]["allocation_method"]
+          allocation_method?:
+            | Database["public"]["Enums"]["allocation_method"]
+            | null
+          bidding_closes_at?: string | null
           category?: string | null
           collection_address?: string | null
           collection_postcode?: string
@@ -455,6 +473,7 @@ export type Database = {
           estimated_duration_minutes?: number | null
           id?: string
           listed_at?: string
+          matching_status?: Database["public"]["Enums"]["matching_status"]
           payout_amount?: number | null
           status?: Database["public"]["Enums"]["job_status"] | null
           title?: string
@@ -1361,7 +1380,68 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_job: {
+        Args: { p_job_id: string; p_vehicle_id: string }
+        Returns: Json
+      }
+      close_expired_auctions: { Args: never; Returns: undefined }
+      find_auction_jobs: {
+        Args: never
+        Returns: {
+          bid_count: number
+          bidding_closes_at: string
+          category: string
+          collection_area: string
+          collection_window_end: string
+          collection_window_start: string
+          customer_price: number
+          delivery_area: string
+          delivery_window_end: string
+          delivery_window_start: string
+          distance_miles: number
+          id: string
+          listed_at: string
+          my_bid_amount: number
+          my_bid_status: Database["public"]["Enums"]["bid_status"]
+          my_bid_vehicle_id: string
+        }[]
+      }
+      find_work_jobs: {
+        Args: { p_job_id?: string }
+        Returns: {
+          category: string
+          collection_area: string
+          collection_window_end: string
+          collection_window_start: string
+          customer_price: number
+          delivery_area: string
+          delivery_window_end: string
+          delivery_window_start: string
+          distance_miles: number
+          id: string
+          listed_at: string
+          payout_amount: number
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
+      my_bids: {
+        Args: never
+        Returns: {
+          amount: number
+          bid_id: string
+          category: string
+          collection_area: string
+          delivery_area: string
+          job_id: string
+          matching_status: Database["public"]["Enums"]["matching_status"]
+          status: Database["public"]["Enums"]["bid_status"]
+          submitted_at: string
+        }[]
+      }
+      submit_bid: {
+        Args: { p_amount: number; p_job_id: string; p_vehicle_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       allocation_method:
@@ -1387,6 +1467,7 @@ export type Database = {
         | "documentation_complete_delivery"
         | "delivery_complete"
       lead_status: "new" | "contacted" | "converted" | "archived"
+      matching_status: "draft" | "listed" | "matched" | "cancelled"
       payment_status: "scheduled" | "pending" | "transferred"
       photo_stage: "collection" | "delivery"
       pmp_status: "active" | "resolved" | "terminated"
@@ -1560,6 +1641,7 @@ export const Constants = {
         "delivery_complete",
       ],
       lead_status: ["new", "contacted", "converted", "archived"],
+      matching_status: ["draft", "listed", "matched", "cancelled"],
       payment_status: ["scheduled", "pending", "transferred"],
       photo_stage: ["collection", "delivery"],
       pmp_status: ["active", "resolved", "terminated"],
