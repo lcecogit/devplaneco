@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { ConfirmButton } from "@/components/admin/ConfirmButton";
+import { ConfirmButton } from "@/components/ui/ConfirmButton";
 
 export function DisputeActions({ chargeId }: { chargeId: string }) {
   async function resolve(waived: boolean, defaultResolution: string, note: string) {

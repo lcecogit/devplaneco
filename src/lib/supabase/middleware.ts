@@ -12,6 +12,7 @@ const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
 // than on every request here.
 const PUBLIC_PARTNER_PATHS = ["/partner/login", "/partner/signup", "/partner/forgot-password"];
 const PUBLIC_ADMIN_PATHS = ["/admin/login"];
+const PUBLIC_CUSTOMER_PATHS = ["/customer/login", "/customer/signup"];
 
 // Refreshes the Supabase auth session cookie on every request that isn't a
 // static asset, and gates /partner/* and /admin/* behind having a session at
@@ -54,6 +55,10 @@ export async function updateSession(request: NextRequest) {
 
   if (pathname.startsWith("/admin") && !PUBLIC_ADMIN_PATHS.includes(pathname) && !user) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
+  }
+
+  if (pathname.startsWith("/customer") && !PUBLIC_CUSTOMER_PATHS.includes(pathname) && !user) {
+    return NextResponse.redirect(new URL("/customer/login", request.url));
   }
 
   return response;

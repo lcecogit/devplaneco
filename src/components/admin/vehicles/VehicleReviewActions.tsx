@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { ConfirmButton } from "@/components/admin/ConfirmButton";
+import { ConfirmButton } from "@/components/ui/ConfirmButton";
 import type { Database } from "@/types/database";
 
 type VehicleUpdate = Database["public"]["Tables"]["vehicles"]["Update"];
