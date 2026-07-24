@@ -25,7 +25,7 @@ export default function PartnerSignupPage() {
         </>
       }
     >
-      <EmailPasswordSignUpForm />
+      <EmailPasswordSignUpForm postAuthPath="/partner/post-auth" />
     </AuthCard>
   );
 }

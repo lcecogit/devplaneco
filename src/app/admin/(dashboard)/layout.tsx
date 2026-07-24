@@ -18,7 +18,7 @@ export default async function AdminDashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, email")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -26,5 +26,5 @@ export default async function AdminDashboardLayout({
     return <ClientRedirect to="/admin/login" />;
   }
 
-  return <AdminChrome>{children}</AdminChrome>;
+  return <AdminChrome adminEmail={profile.email}>{children}</AdminChrome>;
 }

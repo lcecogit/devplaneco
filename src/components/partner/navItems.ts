@@ -24,6 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Work",
     icon: RouteIcon,
     children: [
+      { label: "Find Work", href: "/partner/work/find" },
       { label: "My Work", href: "/partner/work/my-work" },
       { label: "Bidding", href: "/partner/work/bidding" },
       { label: "Watching", href: "/partner/work/watching" },

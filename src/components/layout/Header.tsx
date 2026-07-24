@@ -15,6 +15,7 @@ const NAV_LINKS = [
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 border-b border-brand-100 bg-white/95 backdrop-blur">
@@ -45,6 +46,44 @@ export function Header() {
           >
             {siteConfig.supportPhone}
           </a>
+
+          <div
+            className="relative"
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                setSignInOpen(false);
+              }
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setSignInOpen((v) => !v)}
+              aria-expanded={signInOpen}
+              aria-haspopup="true"
+              className="text-sm font-semibold text-ink-700 transition-colors hover:text-brand-600"
+            >
+              Sign in
+            </button>
+            {signInOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-brand-100 bg-white p-1.5 shadow-lg">
+                <Link
+                  href="/customer/login"
+                  onClick={() => setSignInOpen(false)}
+                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-ink-800 hover:bg-brand-50"
+                >
+                  Customer sign in
+                </Link>
+                <Link
+                  href="/partner/login"
+                  onClick={() => setSignInOpen(false)}
+                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-ink-800 hover:bg-brand-50"
+                >
+                  Partner sign in
+                </Link>
+              </div>
+            )}
+          </div>
+
           <Link
             href="/quote"
             className="rounded-full bg-coral-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-coral-600"
@@ -84,6 +123,27 @@ export function Header() {
             >
               Call {siteConfig.supportPhone}
             </a>
+
+            <div className="mt-2 border-t border-brand-100 pt-2">
+              <p className="px-3 text-xs font-semibold uppercase tracking-wide text-ink-700">
+                Sign in
+              </p>
+              <Link
+                href="/customer/login"
+                onClick={() => setOpen(false)}
+                className="mt-1 block rounded-lg px-3 py-3 text-base font-medium text-ink-800 hover:bg-brand-50"
+              >
+                Customer sign in
+              </Link>
+              <Link
+                href="/partner/login"
+                onClick={() => setOpen(false)}
+                className="block rounded-lg px-3 py-3 text-base font-medium text-ink-800 hover:bg-brand-50"
+              >
+                Partner sign in
+              </Link>
+            </div>
+
             <Link
               href="/quote"
               onClick={() => setOpen(false)}

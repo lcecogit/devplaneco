@@ -7,11 +7,11 @@ import { FormField } from "@/components/ui/FormField";
 
 const MIN_PASSWORD_LENGTH = 8;
 
-// The email+password fields for partner signup, isolated from the page that
-// hosts them so additional methods (Google, magic link, phone OTP) can be
-// added to /partner/signup later as sibling components without touching this
-// one or the step-2/step-3 flow it hands off to.
-export function EmailPasswordSignUpForm() {
+// The email+password fields for signup, isolated from the page that hosts
+// them so additional methods (Google, magic link, phone OTP) can be added
+// later as sibling components without touching this one. Shared across
+// roles (partner, customer) — postAuthPath is the only thing that differs.
+export function EmailPasswordSignUpForm({ postAuthPath }: { postAuthPath: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,7 +40,7 @@ export function EmailPasswordSignUpForm() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/partner/post-auth`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(postAuthPath)}`,
       },
     });
     setSubmitting(false);
@@ -52,8 +52,8 @@ export function EmailPasswordSignUpForm() {
 
     if (data.session) {
       // Email confirmation is off for this project — session is active
-      // immediately, so continue straight into step 2.
-      router.push("/partner/post-auth");
+      // immediately, so continue straight to the post-auth router.
+      router.push(postAuthPath);
       router.refresh();
       return;
     }
