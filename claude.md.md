@@ -9,7 +9,9 @@ mobile app, and an admin panel, all sharing one Supabase backend.
 ## Tech stack
 - Frontend: Next.js 14+ (App Router), TypeScript, Tailwind CSS
 - Backend/DB: Supabase (Postgres, Auth, Storage, Realtime, Edge Functions)
-- Hosting: Hostinger (Node.js hosting / VPS)
+- Hosting: Netlify (`@netlify/plugin-nextjs`, see `netlify.toml`) — Hostinger
+  was the original target but is no longer used; see PROGRESS.md for the
+  2026-07-24 hosting switch and what it changed.
 - Deploy target: a live public domain — see "Indexing" rule below, this is critical.
 
 ## User roles (separate auth flows, enforced via Supabase RLS)

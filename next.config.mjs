@@ -2,10 +2,6 @@ const indexingAllowed = process.env.NEXT_PUBLIC_ALLOW_INDEXING === "true";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // LiteSpeed's Node.js app hosting (this project's host) is documented to
-  // need the standalone server bundle rather than relying on `next start`
-  // directly against .next/ — additive, doesn't change `next start` itself.
-  output: "standalone",
   images: {
     // Our own hand-authored illustrations under /public are trusted SVGs;
     // this is required for next/image to optimize/serve local SVG sources.
