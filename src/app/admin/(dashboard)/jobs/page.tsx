@@ -61,7 +61,7 @@ export default async function AdminJobsPage({
     <div>
       <h1 className="font-heading text-2xl font-extrabold text-ink-900">Jobs</h1>
       <p className="mt-1 text-sm text-ink-700">
-        Assign a job to a specific partner directly, or reassign one that's already matched.
+        Assign a job to a specific partner directly, or reassign one that&apos;s already matched.
       </p>
 
       <div className="mt-6 flex gap-2 border-b border-brand-100">
