@@ -23,7 +23,7 @@ export default async function AdminDisputeDetailPage({ params }: { params: { id:
   const { data: charge } = await supabase
     .from("deallocation_charges")
     .select(
-      "id, amount, reason, dispute_status, created_at, updated_at, job_id, reservation_id, transport_partner_id, waived, resolution"
+      "id, amount, reason, dispute_reason, dispute_status, created_at, updated_at, job_id, reservation_id, transport_partner_id, waived, resolution"
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -79,10 +79,17 @@ export default async function AdminDisputeDetailPage({ params }: { params: { id:
       </div>
 
       <div className="mt-6 rounded-2xl border border-brand-100 bg-white p-6">
-        <h2 className="font-heading text-base font-bold text-ink-900">Reason</h2>
+        <h2 className="font-heading text-base font-bold text-ink-900">Reason for charge</h2>
         <p className="mt-2 text-sm text-ink-900">{charge.reason ?? "No reason recorded"}</p>
-        <p className="mt-4 text-xs text-ink-700">Submitted {formatDate(charge.created_at)}</p>
+        <p className="mt-4 text-xs text-ink-700">Charged {formatDate(charge.created_at)}</p>
       </div>
+
+      {charge.dispute_reason && (
+        <div className="mt-6 rounded-2xl border border-brand-100 bg-white p-6">
+          <h2 className="font-heading text-base font-bold text-ink-900">Partner&apos;s dispute</h2>
+          <p className="mt-2 text-sm text-ink-900">{charge.dispute_reason}</p>
+        </div>
+      )}
 
       {(job || reservation) && (
         <div className="mt-6 rounded-2xl border border-brand-100 bg-white p-6">

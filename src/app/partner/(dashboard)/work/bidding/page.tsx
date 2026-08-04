@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/dashboard/EmptyState";
 import { HandshakeIcon, CarIcon } from "@/components/icons";
 import { SERVICE_CATEGORIES } from "@/components/home/ServicesGrid";
 import { BidForm, type BiddableVehicle } from "@/components/partner/work/BidForm";
+import { WatchToggle } from "@/components/partner/work/WatchToggle";
 
 export const metadata: Metadata = { title: "Bidding" };
 
@@ -87,7 +88,7 @@ export default async function BiddingPage() {
   // pattern as find_work_jobs (migration 0020) — partners can't browse the
   // jobs table for auction listings directly, only through here. See
   // migration 0024.
-  const [{ data: openAuctions, error: auctionsError }, { data: vehicles }, { data: bidHistory }] =
+  const [{ data: openAuctions, error: auctionsError }, { data: vehicles }, { data: bidHistory }, { data: watchlist }] =
     await Promise.all([
       supabase.rpc("find_auction_jobs"),
       supabase
@@ -96,7 +97,9 @@ export default async function BiddingPage() {
         .eq("transport_partner_id", partner!.id)
         .eq("approval_status", "approved"),
       supabase.rpc("my_bids"),
+      supabase.from("job_watchlist").select("job_id").eq("transport_partner_id", partner!.id),
     ]);
+  const watchedIds = new Set((watchlist ?? []).map((w) => w.job_id));
 
   if (auctionsError) {
     return (
@@ -162,13 +165,25 @@ export default async function BiddingPage() {
                       )}
                     </div>
                   </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-sm font-semibold text-ink-900">
-                      {formatTimeRemaining(job.bidding_closes_at)}
-                    </p>
-                    <p className="text-xs text-ink-700">
-                      {job.bid_count} bid{job.bid_count === 1 ? "" : "s"} so far
-                    </p>
+                  <div className="flex shrink-0 items-start gap-2">
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-ink-900">
+                        {formatTimeRemaining(job.bidding_closes_at)}
+                      </p>
+                      <p className="text-xs text-ink-700">
+                        {job.bid_count} bid{job.bid_count === 1 ? "" : "s"} so far
+                      </p>
+                      <p className="text-xs font-semibold text-ink-900">
+                        {job.lowest_bid_amount != null
+                          ? `Lowest: £${Number(job.lowest_bid_amount).toFixed(2)}`
+                          : "No bids yet"}
+                      </p>
+                    </div>
+                    <WatchToggle
+                      jobId={job.id}
+                      transportPartnerId={partner!.id}
+                      initialWatched={watchedIds.has(job.id)}
+                    />
                   </div>
                 </div>
 
@@ -178,6 +193,7 @@ export default async function BiddingPage() {
                       jobId={job.id}
                       vehicles={compatibleVehicles}
                       biddingClosesAt={job.bidding_closes_at}
+                      lowestBidAmount={job.lowest_bid_amount != null ? Number(job.lowest_bid_amount) : null}
                       initialBid={
                         job.my_bid_amount != null
                           ? { amount: Number(job.my_bid_amount), vehicleId: job.my_bid_vehicle_id }

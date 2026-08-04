@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { COMPANY_TYPES } from "@/lib/constants/partner";
+import { SERVICE_CATEGORIES } from "@/components/home/ServicesGrid";
 import { CloseIcon } from "@/components/icons";
 
 type TransportPartner = {
@@ -14,6 +15,9 @@ type TransportPartner = {
   trade_associations: string[] | null;
   allow_bid_invitations: boolean;
   published: boolean;
+  category_preferences: string[];
+  notify_email: boolean;
+  notify_sms: boolean;
 };
 
 export function ProfileForm({ partner }: { partner: TransportPartner }) {
@@ -30,6 +34,11 @@ export function ProfileForm({ partner }: { partner: TransportPartner }) {
   );
   const [newAssociation, setNewAssociation] = useState("");
   const [allowBidInvitations, setAllowBidInvitations] = useState(partner.allow_bid_invitations);
+  const [categoryPreferences, setCategoryPreferences] = useState<string[]>(
+    partner.category_preferences
+  );
+  const [notifyEmail, setNotifyEmail] = useState(partner.notify_email);
+  const [notifySms, setNotifySms] = useState(partner.notify_sms);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -39,6 +48,12 @@ export function ProfileForm({ partner }: { partner: TransportPartner }) {
     if (!value || tradeAssociations.includes(value)) return;
     setTradeAssociations((prev) => [...prev, value]);
     setNewAssociation("");
+  }
+
+  function toggleCategory(slug: string) {
+    setCategoryPreferences((prev) =>
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+    );
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -56,6 +71,9 @@ export function ProfileForm({ partner }: { partner: TransportPartner }) {
         company_type: companyType,
         trade_associations: tradeAssociations,
         allow_bid_invitations: allowBidInvitations,
+        category_preferences: categoryPreferences,
+        notify_email: notifyEmail,
+        notify_sms: notifySms,
       })
       .eq("id", partner.id);
 
@@ -171,6 +189,56 @@ export function ProfileForm({ partner }: { partner: TransportPartner }) {
           className="h-5 w-5 accent-brand-600"
         />
       </label>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-sm font-medium text-ink-800">Job categories</span>
+        <p className="text-xs text-ink-700">
+          Choose which types of work to see in Find Work, Bidding, and Express Interest.
+          Leave everything unchecked to see every category.
+        </p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {SERVICE_CATEGORIES.map((category) => (
+            <label
+              key={category.slug}
+              className="flex items-center gap-2.5 rounded-lg border border-brand-100 px-3.5 py-2.5 text-sm text-ink-800"
+            >
+              <input
+                type="checkbox"
+                checked={categoryPreferences.includes(category.slug)}
+                onChange={() => toggleCategory(category.slug)}
+                className="h-4 w-4 accent-brand-600"
+              />
+              {category.title}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-sm font-medium text-ink-800">Notifications</span>
+        <label className="flex items-center justify-between rounded-lg border border-brand-100 px-4 py-3">
+          <span className="text-sm text-ink-800">Email notifications</span>
+          <input
+            type="checkbox"
+            checked={notifyEmail}
+            onChange={(e) => setNotifyEmail(e.target.checked)}
+            className="h-5 w-5 accent-brand-600"
+          />
+        </label>
+        <label className="flex items-center justify-between rounded-lg border border-brand-100 px-4 py-3">
+          <span className="text-sm text-ink-800">SMS notifications</span>
+          <input
+            type="checkbox"
+            checked={notifySms}
+            onChange={(e) => setNotifySms(e.target.checked)}
+            className="h-5 w-5 accent-brand-600"
+          />
+        </label>
+        <p className="text-xs text-ink-700">
+          Controls which channels we&apos;ll use once email and SMS delivery are switched on
+          for the platform — in-app notifications work today regardless of this setting.
+        </p>
+      </div>
 
       <div className="flex items-center justify-between rounded-lg bg-brand-50/60 px-4 py-3 text-sm text-ink-800">
         <span>Profile status</span>

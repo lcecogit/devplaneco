@@ -1,11 +1,17 @@
 // Decides how a freshly booked job gets matched to a transport partner —
-// run automatically at booking confirmation (see ConfirmStep.tsx), never
-// surfaced to the customer as a choice. Two allocation methods are live so
-// far: 'click_claim' (Phase 6 — first partner to claim it wins) and
-// 'auction' (Phase 6b — partners bid, lowest payout wins when the window
-// closes). Both look identical to the customer once resolved.
+// run automatically at booking creation, never surfaced to the customer as a
+// choice. Two allocation methods are live so far: 'click_claim' (Phase 6 —
+// first partner to claim it wins) and 'auction' (Phase 6b — partners bid,
+// lowest payout wins when the window closes). Both look identical to the
+// customer once resolved.
+//
+// Phase 8A note: the category this takes used to come from a question the
+// visitor answered in Phase 5's step 1. That question is gone — the category
+// is now derived from the item mix (lib/quote/derive-category.ts) — but the
+// rules below are unchanged, and Phase 8B's checkout must still call this
+// when it creates the `jobs` row.
 
-import type { QuoteCategory } from "@/lib/quote/quote-state";
+import type { JobCategory as QuoteCategory } from "@/lib/quote/derive-category";
 
 /** Below this price, a job defaults to click_claim regardless of category
  * (unless the category forces one method or the other below). */

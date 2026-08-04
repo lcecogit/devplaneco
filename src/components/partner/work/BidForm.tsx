@@ -10,11 +10,16 @@ export function BidForm({
   jobId,
   vehicles,
   biddingClosesAt,
+  lowestBidAmount,
   initialBid,
 }: {
   jobId: string;
   vehicles: BiddableVehicle[];
   biddingClosesAt: string;
+  /** Current market-wide lowest pending bid (may be this partner's own),
+   * shown while bidding so they can see what they're up against — matches
+   * AnyVan's transparency model rather than hiding amounts entirely. */
+  lowestBidAmount: number | null;
   initialBid: { amount: number; vehicleId: string | null } | null;
 }) {
   const router = useRouter();
@@ -116,6 +121,12 @@ export function BidForm({
           />
         </label>
       </div>
+
+      <p className="mt-2 text-xs text-ink-700">
+        {lowestBidAmount != null
+          ? `Current lowest bid: £${lowestBidAmount.toFixed(2)} — you'll need to go lower to win.`
+          : "No bids yet — you'd be the first."}
+      </p>
 
       {error && (
         <p role="alert" className="mt-2 text-xs font-medium text-coral-600">
