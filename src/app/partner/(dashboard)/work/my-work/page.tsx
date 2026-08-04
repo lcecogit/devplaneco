@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { RouteIcon } from "@/components/icons";
@@ -95,11 +96,19 @@ export default async function MyWorkPage() {
                       </>
                     )}
                   </div>
-                  {job?.status && (
-                    <span className="shrink-0 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
-                      {JOB_STATUS_LABELS[job.status] ?? job.status}
-                    </span>
-                  )}
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    {job?.status && (
+                      <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+                        {JOB_STATUS_LABELS[job.status] ?? job.status}
+                      </span>
+                    )}
+                    <Link
+                      href={`/partner/messages/${assignment.job_id}`}
+                      className="text-xs font-semibold text-brand-600 hover:text-brand-700"
+                    >
+                      Message customer →
+                    </Link>
+                  </div>
                 </div>
               </div>
             );
