@@ -11,6 +11,18 @@ export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(supabaseUrl, supabasePublishableKey, {
+    // PostgREST selects are GETs, and Next 14 both caches and per-render
+    // memoizes GETs through its patched global fetch — which turns a
+    // read-after-write in the same render into a stale read. See the longer
+    // note in ./admin.ts, where this actually bit us.
+    global: {
+      fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+        fetch(input, {
+          ...init,
+          cache: "no-store",
+          signal: init?.signal ?? new AbortController().signal,
+        }),
+    },
     cookies: {
       getAll() {
         return cookieStore.getAll();

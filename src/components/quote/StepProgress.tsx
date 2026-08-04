@@ -1,4 +1,4 @@
-const STEP_LABELS = ["What's moving", "Route & date", "Details", "Estimate", "Confirm"];
+const STEP_LABELS = ["Addresses", "Your items", "Date & price"];
 
 export function StepProgress({ currentStep }: { currentStep: number }) {
   return (

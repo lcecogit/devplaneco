@@ -16,12 +16,12 @@ function formatTimestamp(value: string) {
   });
 }
 
-export default async function PartnerMessagesPage() {
+export default async function CustomerMessagesPage() {
   const supabase = await createClient();
 
-  // my_message_threads() is a SECURITY DEFINER RPC — see migration 0034 —
-  // that resolves to the caller's own threads (customer or partner side,
-  // never both), so no extra filtering is needed here.
+  // my_message_threads() resolves to the caller's own threads — customer
+  // side here, since it branches on current_customer_id() vs
+  // current_partner_id() server-side. See migration 0034.
   const { data: threads, error } = await supabase.rpc("my_message_threads");
 
   if (error) {
@@ -37,24 +37,16 @@ export default async function PartnerMessagesPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-2xl font-extrabold text-ink-900">Messages</h1>
-          <p className="mt-1 text-sm text-ink-700">Message customers about jobs you&apos;ve been matched to.</p>
-        </div>
-        <Link
-          href="/partner/messages/templates"
-          className="shrink-0 rounded-full border border-brand-300 px-4 py-2 text-sm font-semibold text-ink-700 transition-colors hover:bg-brand-50"
-        >
-          Manage templates
-        </Link>
-      </div>
+      <h1 className="font-heading text-2xl font-extrabold text-ink-900">Messages</h1>
+      <p className="mt-1 text-sm text-ink-700">
+        Message the transport partner handling your booking once you&apos;ve been matched.
+      </p>
 
       {!threads?.length ? (
         <EmptyState
           icon={MessageIcon}
           title="No conversations yet"
-          description="Once you're matched to a job, you can message the customer about it here."
+          description="Once a booking is matched with a transport partner, you can message them about it here."
         />
       ) : (
         <div className="mt-6 flex flex-col gap-3">
@@ -63,7 +55,7 @@ export default async function PartnerMessagesPage() {
             return (
               <Link
                 key={thread.job_id}
-                href={`/partner/messages/${thread.job_id}`}
+                href={`/customer/messages/${thread.job_id}`}
                 className="flex items-center justify-between gap-4 rounded-2xl border border-brand-100 bg-white p-5 hover:border-brand-300"
               >
                 <div className="min-w-0">

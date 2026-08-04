@@ -106,12 +106,16 @@ export default function ServicePage({ params }: Props) {
         <p className="mt-4 text-lg text-ink-700">{service.description}</p>
         <p className="mt-2 text-sm text-ink-700">
           Full pricing, coverage area and partner details for this service are
-          coming soon. For now, start a general quote request and mention{" "}
-          {service.title.toLowerCase()} in the details.
+          coming soon. In the meantime you can get a real price in three steps —
+          just tell us your addresses and what you&apos;re moving.
         </p>
 
+        {/* The ?service= param is a hint only. The quote flow derives the real
+            job category from the item list the visitor enters (see
+            lib/quote/derive-category.ts); the hint just preserves categories
+            the inventory can't express, like a car or a piano. */}
         <Link
-          href="/quote"
+          href={`/quote?service=${service.slug}`}
           className="mt-8 inline-flex items-center justify-center rounded-full bg-coral-500 px-7 py-3.5 text-base font-semibold text-white transition-colors hover:bg-coral-600"
         >
           Get a free quote
