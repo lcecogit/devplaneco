@@ -367,3 +367,1271 @@ must follow.
   phase brief scoped. Manual admin override of an auction outcome is still
   out of scope, per the brief, pending Phase 4's dispute tools once real
   disputed-auction data exists to act on.
+
+### 2026-07-27 — Phase 8A: quote flow rebuilt (addresses → items → date & price)
+- Built: `/quote` replaced with a 3-step flow (`QuoteFlow` +
+  `components/quote/steps/{Address,Items,Date}Step.tsx`) plus a persistent
+  sidebar (`QuoteSidebar`) from step 2 onward. Step 1: postcode typeahead via
+  postcodes.io (`lib/geo/postcodes.ts` — 300ms debounce, module-level cache,
+  in-flight dedupe, outcode fallback), floor dropdown, lift checkbox that
+  appears/disappears with the floor, add/remove extra stops. Step 2: typeahead
+  over a real 60-row `item_catalogue` (matching name +
+  `search_terms` synonyms — "settee" finds the sofas), 3x3 category tiles with
+  expanding panels (dimensions shown as subtext for Boxes & Bags), custom-item
+  modal with CM/M/IN and KG/LB unit conversion, My Item List with quantity
+  steppers, Get Prices disabled until an item exists. Step 3: crew tabs with
+  per-tab "from" prices, month calendar priced per date, Best Price badge,
+  date drawer with dual-handle hour-granularity window sliders, helper
+  toggle, live total, `Proceed & Book` → `/quote/checkout` (8B placeholder).
+  New modules: `lib/geo/distance.ts` (haversine + documented constants),
+  `lib/pricing/{constants,calculate-price}.ts` (pure engine, structured
+  breakdown), `lib/quote/{types,api,server,flags,derive-category}.ts`, and API
+  routes `POST /api/quote` and `GET|PATCH /api/quote/[id]`. Leaflet +
+  OpenStreetMap route map (`RouteMap.tsx`), added as a dependency. Migrations
+  0030 (floor_level/item_category/quote_status enums; `item_catalogue`,
+  `quotes`, `quote_stops`, `quote_items`, `job_stops`, `job_items`; `jobs`
+  gains `quote_id`/`crew_size`/`total_volume_m3`/`helper_included`/
+  `price_breakdown`; RLS throughout) and 0031 (catalogue seed).
+- Key decisions: **Pricing constants chosen** (all in
+  `lib/pricing/constants.ts`, first-pass values with the reasoning written
+  inline, not derived from our own cost data because we have none yet):
+  base £38 call-out + £14/m3 + £1.15/mile tapering to 0.75x past 100 miles,
+  £45 minimum; crew 1.0x / 1.45x; day-of-week Sun 1.2 / Mon 1.0 / Tue-Wed 0.97
+  / Thu 1.0 / Fri 1.08 / Sat 1.15; lead time 1.45x same-day tapering through
+  1.3 / 1.2 / 1.12 / 1.05 / 1.01 to a flat 1.0 from 14 days out; floor
+  surcharges £12 basement, £0 ground, £12/£24/£38/£54/£72/£92/£115 for
+  1st–6th/above, charged per stop and reduced to 25% with a lift; time window
+  £1.4 x hours-lost^1.6 per end of the route (full 8am–6pm free, so ~£4 for an
+  8-hour window up to ~£49 for a 1-hour one); helper £45 + £3/m3.
+  **Multipliers apply to the base only, never to the surcharges** — a
+  third-floor carry costs the same on a Saturday as a Tuesday, and inflating
+  it would make the surcharge impossible to explain to a customer.
+  **jobs.category is now derived, not asked** (`lib/quote/derive-category.ts`):
+  item mix + stop count decide it (<=3 lines and <=3m3 and <=6 units on a
+  2-stop route => single-item-transport; >=8m3 with office items >=30% of
+  units => office-relocation; otherwise home-removals), and the homepage
+  service card's `?service=` slug is kept only as a hint for the four
+  categories the inventory genuinely can't express (car, motorbike, piano,
+  international). Thresholds are covered by `npm run check:derive-category`,
+  which caught the original 15m3 office threshold being too high for compact
+  office furniture. **Anonymous quotes are reached only through server-side
+  API routes**: an anon visitor has no `auth.uid()` for RLS to key ownership
+  on, so rather than opening a `using (true)` read policy on `quotes` (which
+  would let anyone enumerate every quote and its addresses), the three quote
+  tables are locked to service-role and the quote's UUID acts as a capability
+  token in `?quote=<uuid>`. **Verified by hand**: an anon PostgREST client
+  gets `[]` from quotes/quote_stops/quote_items while rows exist, and reads
+  `item_catalogue` fine. **The server always recalculates the price** from the
+  stored stops and items — a client can't post a price, and 8B must charge off
+  `quotes.total_price` as stored. **Availability/scarcity badges ship
+  disabled** (`SHOW_AVAILABILITY_BADGES = false`) because no real partner
+  availability data exists; the flag comment spells out that inventing
+  scarcity is a UK consumer-protection risk (CMA enforcement precedent), not
+  just bad manners, so nobody "fixes" the empty calendar with a random number.
+  **Prices are not gated behind email** (`GATE_PRICES_BEHIND_EMAIL = false`) —
+  the gated variant exists for a later test but keeps an escape hatch either
+  way; email capture is an optional sidebar action with a separate,
+  unticked-by-default marketing checkbox. No "X% cheaper than other companies"
+  claim anywhere — that's comparative advertising we can't substantiate.
+  **Two real bugs found and fixed while testing in the browser**, not just
+  reasoned about: (1) `AddressStep` fired two state patches in the same tick
+  (clear resolved geo, then store new text) through a non-functional
+  setState, so the second clobbered the first from a stale closure and a
+  resolved postcode never stuck — fixed by making the prop a
+  `Dispatch<SetStateAction>` and dropping the redundant second call in
+  `AddressLookup.resolve`; (2) DOM `id`/`htmlFor` were built from
+  `crypto.randomUUID()` stop keys, which differ between the server and client
+  renders and hydration-mismatched every floor dropdown — fixed by deriving
+  ids from `useId()` + index (React keys can stay random; they never reach the
+  DOM). **The whole flow was walked through end to end against the live
+  Supabase project**: 2-stop and 3-stop routes, synonym search, category
+  tiles, quantity steppers, a custom item (1.5m x 0.6m x 1.2m / 500lb stored
+  correctly as 1.08 m3 / 226.8 kg), calendar prices hand-checked against the
+  constants (27 Jul = same-day 1.45x, 30 Jul = Thu 1.12x lead — both matched),
+  crew-tab re-pricing, window slider (8am–12pm = +£24.61 = 1.4 x 6^1.6),
+  helper toggle symmetry, live total, email capture, `Proceed & Book` →
+  checkout, and reload-from-`?quote=` restoring the full quote.
+- Deferred / not done yet: **Checkout is a placeholder** — `/quote/checkout`
+  renders the saved quote and a "payment coming soon" note but creates no
+  `jobs` row. 8B still has to collect full street addresses (we only ever ask
+  for postcodes), collect contact details / create the account, claim the
+  quote (`customer_id`, `status = 'converted'`), mirror `quote_stops`/
+  `quote_items` into `job_stops`/`job_items` while keeping the flat
+  `collection_*`/`delivery_*` columns populated with the first and last stop
+  for Phase 6/7 compatibility, and **call `lib/allocation/assign-method.ts`** —
+  Phase 7's automatic allocation-method assignment must still run at booking
+  creation and nothing does it now. Distance is still an estimate, not a
+  routed one: haversine x `ROAD_WINDING_FACTOR` (1.3) with duration from
+  `AVERAGE_SPEED_MPH` (35), both documented; swapping in
+  OpenRouteService/OSRM/Google Directions means replacing the body of
+  `calculateRouteDistance()` and nothing else, but the route should then be
+  resolved once and cached on the quote rather than re-derived per price.
+  Pricing constants are first-pass guesses — the first real jobs should retune
+  them — and `payout_amount` still has no commission/payout calculation
+  anywhere (Phase 6's known gap, untouched here). `quotes.status` is never
+  moved off `in_progress`: nothing marks a quote `abandoned`, and `expires_at`
+  is set but unenforced. OSM's public tile server is fine at our traffic but
+  has a usage policy; the swap point is commented in `RouteMap.tsx`. Phase 5's
+  `/quote` wizard, `estimate-quote.ts`, `postcode-distance.ts` and
+  `quote-state.ts` were **deleted**, not deprecated in place, so there is only
+  one live quote path.
+
+### 2026-07-27 — Phase 8B: checkout, account creation, real booking creation
+- Built: `/quote/checkout` rebuilt from 8A's placeholder into a real
+  three-state page (`app/quote/checkout/page.tsx` + `components/checkout/
+  {OrderSummary,CheckoutForm}.tsx`) — signed out shows the full order summary
+  plus sign-in/create-account CTAs that round-trip `next` through the Phase 5
+  customer auth; signed in claims the quote and shows the form; already-booked
+  bounces to the thank-you page. The summary shows every stop with floor/lift,
+  date, both time windows, crew, helper, the item list, total volume, and the
+  price **with its full breakdown** (`components/quote/PriceBreakdownList.tsx`
+  renders the stored `quotes.price_breakdown` line by line, so no opaque
+  number). The form collects name, phone (prefilled from `profiles`), a street
+  address per stop, optional access notes, and a terms checkbox.
+  `POST /api/quote/[id]/confirm` is the gate: auth, ownership, field
+  validation, **server-side reprice from the stored quote**, then booking.
+  `lib/booking/confirm-booking.ts` → `confirmBookingAndCreateJob(quoteId)`
+  creates the `jobs` row + `job_stops` + `job_items`, runs Phase 7's
+  `assignAllocationMethod`, sets `matching_status = 'listed'`, creates the
+  `customer_payments` row as `unpaid`, and marks the quote `converted`.
+  `/quote/confirmation/[reference]` is the thank-you page (always noindex),
+  with allocation-method-accurate "what happens next" copy shared with the
+  email via `lib/booking/next-steps.ts`. Migration 0032: the
+  `customer_payments` table + `customer_payment_status` enum, checkout columns
+  on `quotes` (`contact_name`/`contact_phone`/`access_notes`/
+  `terms_accepted_at`), `address_line` on `quote_stops`/`job_stops`,
+  `jobs.access_notes`, and a partial unique index on `jobs.quote_id`. New
+  `lib/email/{send,booking-confirmation}.ts` and `lib/time/uk-datetime.ts`,
+  plus `npm run check:uk-datetime`.
+- Key decisions: **`confirmBookingAndCreateJob` takes exactly one argument, and
+  that's the whole design.** Everything it needs — contact details, notes,
+  terms acceptance, the price — is persisted on the quote before it runs, so it
+  needs no request body, no session and no browser, which is precisely what a
+  Stripe webhook has. **Where Stripe attaches is written out in full at the top
+  of `lib/booking/confirm-booking.ts`**: the confirm route creates a
+  PaymentIntent instead of calling this function, and a new
+  `/api/webhooks/stripe` route calls
+  `confirmBookingAndCreateJob(metadata.quote_id)` on
+  `payment_intent.succeeded` — a one-line swap — then updates the
+  `customer_payments` row this function already created.
+  **`customer_payments` is deliberately NOT the existing `payments` table**,
+  which models partner payouts (scheduled/transferred, express-pay fee); the
+  two sides of a marketplace transaction have different counterparties and
+  lifecycles. Amounts are stored in pounds like everything else — the pence
+  conversion belongs at the Stripe boundary. `refunded` is in the enum from day
+  one so a later cancellation flow has a state to move into rather than
+  deleting a financial record. **Idempotency is enforced by the database, not
+  by an application check**: the partial unique index on `jobs.quote_id` is
+  what arbitrates, and the `quotes.status = 'converted'` check is only a fast
+  path — **verified by firing two genuinely concurrent confirms with
+  `Promise.all` plus a third sequential one, which produced exactly 1 job,
+  1 payment, 2 stops and 2 items and returned the same `jobId` all three
+  times.** **The price is re-established server-side before confirming and a
+  mismatch is surfaced, not silently applied** — the client posts what it
+  displayed purely so we can tell it changed; a mismatch returns a
+  `price_changed` state that the form renders as "the price has changed, please
+  review" with the new figure, which the customer must accept explicitly. This
+  matters already because the lead-time multiplier is a function of
+  days-until-move, so a quote left open overnight genuinely reprices.
+  **8A flagged that checkout still had to collect street addresses; it wasn't
+  in this phase's brief but was built anyway** — a booking a driver can't find
+  isn't a booking — and it's stored in a new `address_line` column rather than
+  overwriting `address_text`, which holds the postcodes.io label the route map
+  and "Bushey to Theydon Bois" summary depend on. **Confirmation-email copy
+  never claims delivery that didn't happen**: `emailConfigured` is exported
+  from `lib/email/send.ts` and the thank-you page says "confirmation emails
+  aren't switched on yet" while no provider is set.
+  **Two real bugs were found and fixed by testing, not by reading:**
+  (1) **Next.js's per-render fetch memoization was serving stale Supabase
+  reads.** Next 14 patches global `fetch` and dedupes identical GETs within a
+  single render; PostgREST selects are GETs, so /quote/checkout read the
+  quote's owner (`null`), claimed it, re-read the owner — and got the memoized
+  pre-claim `null` back. Every customer's first visit after signing in was told
+  "this quote belongs to another account". `cache: "no-store"` alone does *not*
+  fix this (that's the Data Cache, a different mechanism); passing a distinct
+  `signal` per request is the documented opt-out. Fixed centrally in
+  `lib/supabase/{admin,server}.ts` so no call site has to remember, and
+  `claimQuoteForCustomer` now uses `.select()` on the update so the success
+  path has no read-after-write at all. **This affects every server-side
+  read-after-write in the app, not just this phase's.**
+  (2) **A BST off-by-one wrote every summer booking an hour early.** The first
+  cut of `ukWallClockToUtcIso` measured its second-pass correction against the
+  running guess instead of the target, so it applied the +1h offset twice: an
+  8am collection on 5 Aug landed as `06:00Z` instead of `07:00Z`. Caught by
+  reading the row back out of the database after a real booking, not by
+  inspecting the code. Phase 5's booking code had the same class of bug (naive
+  `new Date()` + `setHours()`, resolved against the server's timezone); this
+  module replaces that approach outright and is covered by
+  `npm run check:uk-datetime`, which pins both DST-boundary days.
+  **Verified end to end against the live project**: anonymous quote → checkout
+  signed out → sign in → quote claimed → form filled → confirm → thank-you
+  page, then the `jobs`/`job_stops`/`job_items`/`customer_payments` rows and
+  corrected UTC windows checked by SQL, the booking confirmed visible in My
+  Bookings, and the confirm gate exercised for stale price, unticked terms,
+  missing address, and anonymous caller (401). `get_advisors` reports no new
+  security findings from 0032.
+- Deferred / not done yet: **No payment is taken** — the checkout shows a
+  clearly-labelled "Payment — coming soon" panel with no card fields and no
+  fake pay button, and every booking gets a `customer_payments` row with
+  status `unpaid` waiting to be fulfilled. **Needs configuration: an email
+  provider.** Nothing in this codebase has ever sent an application email
+  (Supabase Auth uses its own SMTP), so rather than adding a dependency and an
+  API key that doesn't exist, `lib/email/send.ts` is a provider-agnostic seam
+  that logs the full message to the server console and returns
+  `{ delivered: false, reason: 'not_configured' }`. **Resend is the
+  recommendation** (one `RESEND_API_KEY`, plain HTTPS POST so no SDK, works
+  from a Netlify function without Nodemailer's SMTP egress problems); Postmark
+  if deliverability matters more than price. Implementing the `deliver()`
+  function is the only code change, plus `EMAIL_PROVIDER`, `RESEND_API_KEY` and
+  `EMAIL_FROM` env vars — and a real sending domain, since `moversnow.example`
+  in `site-config.ts` is a placeholder. No refund or cancellation flow was
+  built this phase, as scoped, but `customer_payments` can represent a refund
+  and nothing hard-deletes. No Stripe SDK dependency was added. `payout_amount`
+  still has no commission calculation anywhere (Phase 6's gap, untouched).
+  Booking still assumes one collection+delivery visit on a single day. The
+  terms checkbox records `terms_accepted_at` but there's no versioned terms
+  document to point it at yet.
+
+### 2026-07-29 — Auction bid transparency, to match AnyVan's real model
+- Built: `find_auction_jobs()` now also returns `lowest_bid_amount` — the
+  current lowest pending bid on an auction, visible to every partner
+  browsing it (migration 0030). The Bidding tab shows it both on the job
+  card ("Lowest: £X" next to the bid count) and inline in the bid form
+  itself while a partner is typing an amount ("Current lowest bid: £X —
+  you'll need to go lower to win").
+- Key decisions: **This deliberately reverses the original Phase 6b brief**,
+  which said not to show other partners' bid amounts, only the count. After
+  reviewing screenshots of AnyVan's actual live partner dashboard (Search
+  Deliveries / Alerts pages), their auctions show the current lowest bid to
+  every browsing partner — asked to match that model explicitly, so this
+  isn't a bug fix, it's an intentional design change on record. `bid_count`
+  stays as-is. The lowest amount shown can be the viewing partner's own bid
+  if they're currently winning — that's expected and matches AnyVan's
+  behaviour, not a leak of someone else's number. Repeated the same
+  DROP+CREATE-then-explicitly-revoke-from-both-public-and-anon dance as
+  migrations 0026–0029 (changing a `returns table` shape requires DROP, and
+  DROP+CREATE re-triggers this project's default grant to anon) — verified
+  clean with `has_function_privilege` immediately after applying, not
+  assumed. Verified live in the browser (not just via SQL): seeded a fresh
+  test auction with one £300 bid from Partner B, confirmed Partner A's
+  Bidding tab showed "Lowest: £300.00" on the card and the same figure
+  inline in the bid form, then deleted the test job/bid afterward.
+- Deferred / not done yet: `my_bids()` (the bid-history view) still doesn't
+  show what the winning/losing amount was for resolved auctions — only the
+  partner's own bid and its outcome. Not asked for in this pass; flagging in
+  case "what did I lose by" turns out to matter later.
+
+### 2026-07-29 — Messages (job-scoped customer↔partner chat)
+- Built: a new `messages` table (migration 0034) plus two RPCs —
+  `my_message_threads()` for each dashboard's Messages inbox (last message,
+  timestamp, unread count, resolved counterpart name) and
+  `mark_messages_read(p_job_id)`, called when a thread is opened. Replaced
+  the Phase 3 `/partner/messages` shell with a real inbox + thread view, and
+  added the equivalent at `/customer/messages` (new nav item — customer
+  dashboard had no Messages entry at all before this). A shared client
+  component, `components/messages/MessageThread.tsx`, renders the bubble UI
+  and composer for both sides. Also added a "Message [counterpart] →" link
+  on the customer booking detail page and partner My Work, once matched, so
+  the feature is actually discoverable from where a job lives.
+- Key decisions: **Scoped to matched jobs only** — a message thread only
+  opens once a `job_assignments` row exists, the same privacy boundary this
+  project already uses for full-address access (migration 0020). AnyVan's
+  real system (reviewed via their live partner dashboard screenshots) also
+  supports messaging *during* bidding, before a match, with default
+  "customer asking for contact details" canned templates — deliberately
+  deferred, along with their admin-broadcast inbox, since neither has an
+  equivalent trigger in this project yet and building them now would be
+  speculative. Messages are immutable once sent (no update/delete policy for
+  regular users, matching the photos/status_logs evidence pattern) —
+  `read_at` is written by a SECURITY DEFINER RPC instead of a general UPDATE
+  grant, so a participant can never mark their own sent messages "read" or
+  edit anything after the fact. **Caught a real RLS gap during live
+  testing**: the partner-side thread page originally read the customer's
+  display name via a direct `profiles` query, which silently returned
+  nothing because `profiles_select` is self-only (`id = auth.uid()`) —
+  same shape as the `transport_partners` gap Phase 6 hit for the reverse
+  direction (migration 0020). Fixed by sourcing the name from
+  `my_message_threads()` (already SECURITY DEFINER) instead of adding yet
+  another cross-table RLS policy for one field. All new functions were
+  explicitly revoked from `public`/`anon` up front this time and verified
+  clean with `has_function_privilege` before moving on, rather than
+  discovering a leak via the advisor afterward (as happened twice in the
+  auction work). **This session found the working tree had substantial
+  uncommitted work from a separate concurrent session** (a rebuilt
+  `/quote`→checkout flow, item catalogue, `customer_payments` — migrations
+  0030–0032) that this phase didn't touch, build on top of, or attempt to
+  reconcile beyond confirming the tables Messages depends on
+  (`jobs`/`job_assignments`/`customers`/`transport_partners`/`profiles`)
+  were unaffected. Verified the full send → inbox unread badge → open →
+  auto-marks-read → reply → other side sees it flow live in the browser
+  with two real test accounts, not just via SQL.
+- Deferred / not done yet: pre-match messaging (bidding-stage contact),
+  admin-visible/broadcast messages, canned "default message" templates, and
+  any live/realtime updates (a thread only refreshes on send or reload —
+  no Supabase Realtime subscription yet). No unread badge on the sidebar
+  nav item itself, only inside the Messages page — would need a chrome-level
+  change (DashboardChrome/Sidebar) this pass didn't touch.
+
+### 2026-07-29 — Reservations completed (partner-declared availability)
+- Built: this turned out to already exist, more completely than earlier
+  status summaries in this log suggested — `/partner/reservations` (Current/
+  Historic tabs) and `/partner/reservations/new` were real, working,
+  committed since Phase 3 (`e0362d8`), not shells. What was actually
+  missing against `reservations`' own schema and AnyVan's reference UI:
+  `team_size` and `van_space_m3` were columns nobody wrote to — added both
+  to `ReservationForm` (crew size as 1/2/Flexible, matching AnyVan's radio
+  group; van space as a plain number input) — and there was no way to
+  remove a reservation once created. Added `CancelReservationButton`
+  (`components/partner/reservations/`), gated to `status = 'pending'` so a
+  reservation can't be pulled once something real is matched to it. No
+  migration needed — the schema already had every field used here, from
+  Phase 2.
+- Key decisions: cancelling **deletes** the row rather than setting a status,
+  because `reservation_status` has no `'cancelled'` value (`pending` /
+  `accepted` / `partially_matched` / `fully_booked` / `expired`) and
+  `reservations_delete`'s RLS already permits it — adding a new enum value
+  for this felt like more schema churn than the feature needed. Verified
+  live: created a reservation with a real vehicle/date/postcodes/crew
+  size/van space, confirmed it listed correctly, cancelled it, confirmed it
+  was gone.
+- Deferred / not done yet, and this is the important part: **nothing
+  automatically matches jobs to a reservation**. AnyVan's actual pitch is
+  "we'll try to fill it with work" — a partner declares availability and
+  AnyVan's system routes compatible jobs to it. That matching engine does
+  not exist here at all; a reservation today is purely a partner's own
+  calendar note that sits at `status = 'pending'` forever with nothing
+  reading it. `allocation_method` already has a `'reservation'` enum value
+  reserved for this, but no code path ever sets it. Building the actual
+  matcher is a real, separate piece of work — comparable in size to the
+  auction system — and needs a design decision this pass didn't make: how a
+  reservation-eligible job should be prioritised against the existing
+  click_claim/auction pool (does a matching reservation intercept a job
+  before either of those, or run alongside them?). Flagging rather than
+  guessing. **Correction to an earlier status summary in this conversation**:
+  I'd told the user Reservations was "not started" — it wasn't quite right;
+  the declare-availability half already existed, only the matching-engine
+  half was (and still is) missing.
+
+### 2026-07-30 — Reservation matching engine (the "we'll fill it with work" half)
+- Built: the actual matcher flagged as missing in the entry above. A new
+  `allocation_method = 'reservation'` job-creation path via a trigger on
+  `jobs` (migration 0035, timing fixed in 0036 — see below), independent of
+  which code creates the job row (Phase 5's ConfirmStep or Phase 8B's
+  confirm-booking.ts both work unmodified, since neither file was touched).
+  On insert, a matching pending reservation (same date, compatible
+  postcode-area route, crew size, van space, and price range) intercepts the
+  job before click_claim/auction ever see it, raises a `job_invitations` row
+  for that partner with a 2-hour response window, and flips the reservation
+  to `partially_matched`. Built out `/partner/work/invitations` (was a
+  Phase 3 shell) — pending invitations with Accept/Decline
+  (`InvitationActions.tsx`), plus a past-invitations history. Accepting
+  (`respond_to_job_invitation()`) picks a vehicle, matches the job, creates
+  `job_assignments`, and sets the reservation `fully_booked`. Declining, or
+  letting it time out (`expire_job_invitations()`, pg_cron every 5 minutes —
+  same shape as `close_expired_auctions`), frees the reservation back to
+  `pending` and falls the job back into normal click_claim/auction using a
+  SQL mirror of `assign-method.ts`'s exact rule
+  (`app_private.fallback_allocation_method`).
+- Key decisions: **A real bug, only found by actually inserting a matching
+  test job, not by reasoning about the SQL**: the trigger was originally
+  `BEFORE INSERT` so it could override `NEW.allocation_method` directly, but
+  that meant `job_invitations.job_id`'s foreign key pointed at a row that
+  didn't physically exist yet (BEFORE triggers fire ahead of the actual
+  write) — every match hit a FK violation and the whole insert rolled back.
+  Fixed by moving to `AFTER INSERT` and doing the allocation_method override
+  as an explicit `UPDATE` instead of an assignment to `NEW` (migration 0036)
+  — same net effect, no ordering problem, and confirmed by re-running the
+  exact same test insert successfully afterward. **Also fixed a real privacy
+  gap this surfaced**: `jobs_select`'s `job_invited_to_current_partner`
+  clause (written in migration 0019, never exercised until this phase
+  actually wrote to `job_invitations`) granted a merely-*invited* partner the
+  full row — exact address included — with no check they'd accepted.
+  Removed it from the policy the same way migration 0020 removed the
+  equivalent "browse listed jobs" leak; an invited partner now only sees the
+  address-free shape via `my_job_invitations()` until acceptance creates a
+  real `job_assignments` row. **The SQL/TypeScript rule duplication is a
+  known, flagged piece of debt**: `fallback_allocation_method()` hand-mirrors
+  `assign-method.ts`'s thresholds because there's no shared source of truth
+  across that language boundary — if the price threshold or forced
+  categories ever change in the TypeScript file, this SQL function needs
+  updating by hand to match, or the two will silently disagree. Verified the
+  complete loop live against the real database three separate ways: a
+  reservation-matched job through to accept (job_assignments created,
+  reservation `fully_booked`, full address unlocked in My Work), a second
+  through decline (reservation freed, job correctly re-derived to `auction`
+  at £300/home-removals), and a third through the actual 5-minute expiry
+  path (backdated `expires_at`, ran `expire_job_invitations()` for real, same
+  correct fallback) — all cleaned up afterward.
+- Deferred / not done yet: a reservation can only ever be matched to exactly
+  one job (`fully_booked` on the first accept) — no partial-capacity
+  accumulation across multiple smaller jobs filling one reservation, which
+  is what AnyVan's `partially_matched`/`fully_booked` distinction implies
+  their system actually does. Building that needs a real model for "how much
+  of this reservation is left" (time and/or van space), not just a status
+  flag — flagging as a deliberate simplification, not an oversight. If a
+  customer cancels a job while its reservation invitation is still pending,
+  the reservation doesn't free up instantly — it self-heals within 5 minutes
+  via the same expiry sweep, since `fallback_reservation_job` already no-ops
+  safely on a non-`listed` job. No UI change to the Reservations list to
+  show "1 job pending against this" beyond the status badge already there.
+
+### 2026-07-30 — Watching
+- Built: the fastest of the remaining Phase 3 shells, on purpose — the
+  `job_watchlist` table and its RLS already existed untouched from Phase 2
+  (fully partner-owned CRUD), so this only needed a curated read path
+  (`my_watchlist()`, migration 0037 — same SECURITY DEFINER shape as
+  `find_work_jobs`/`my_bids`, needed because a watched job can still be
+  `listed` and not yet assigned to the watching partner) and a save/unsave
+  toggle. `WatchToggle.tsx` does a plain insert/delete against
+  `job_watchlist` directly — no RPC needed, RLS alone is enough since
+  there's no business logic beyond "is this my own row." Wired the toggle
+  into Find Work and Bidding's job cards, and rebuilt `/partner/work/watching`
+  to show each watched job's current state (still listed / matched to
+  someone else / cancelled) plus a live bid count for auction jobs.
+- Key decisions: the toggle calls `e.preventDefault()`/`stopPropagation()`
+  since Find Work's cards are full-card `<Link>`s — verified live that
+  clicking the star doesn't also navigate to the job detail page. Reused
+  `StarIcon`'s existing `fill="currentColor"` mechanism (color via
+  `text-*` class only) rather than introducing a separate `fill-*` utility,
+  matching how every other icon in this codebase is coloured.
+- Deferred / not done yet: no notification when a watched job's status
+  changes (e.g. someone else claims it) — a partner has to revisit the
+  Watching page to see that. Not in scope for a 40-minute pass; would fit
+  naturally alongside Alerts, which is still a shell.
+
+### 2026-07-30 — Alerts
+- Built: the last of the four Phase 3 Work-tab shells. `saved_searches` and
+  its RLS already existed fully from Phase 2 (fully partner-owned CRUD) with
+  a flexible `filters jsonb` column, so no schema change was needed for
+  create/list/delete — those go straight through RLS from
+  `SavedSearchForm.tsx`/`DeleteSavedSearchButton.tsx`, no RPC. The one new
+  piece is `alert_matches()` (migration 0038), a SECURITY DEFINER RPC — same
+  reasoning as `find_work_jobs`/`my_watchlist` — that returns every currently
+  listed, fleet-compatible job (click_claim or auction) matching *any* of the
+  partner's saved searches, tagged with which search matched. `filters`
+  supports `categories` (array, empty/absent = any), `postcodeArea` (matches
+  either end of the job, case-insensitive), and `minPrice`/`maxPrice` —
+  every key optional, same "don't hide over an unpopulated field" principle
+  used throughout. `/partner/work/alerts` now shows the alert list (with
+  delete) above a live matches list, reusing Find Work's card layout —
+  clicking a match links to Bidding or Find Work depending on which
+  allocation method it is.
+- Key decisions: matches are deduplicated (`distinct on (j.id)`) when a job
+  satisfies more than one saved search, rather than showing it once per
+  matching search. Verified live end-to-end, and this is where a genuinely
+  useful catch happened: an alert for postcode area "MH" correctly matched
+  *nothing*, which looked wrong until checking the database directly — the
+  one job in that area is a pre-Phase-6b legacy test row with
+  `allocation_method = null`, and `alert_matches()` deliberately excludes
+  null the same way `find_work_jobs` does (both intentionally scope to
+  `click_claim`/`auction`, not "anything unset"). Re-tested against a "SW"
+  alert against real auction jobs and got 3 correctly tagged, correctly
+  priced matches — confirms the filter logic itself is right; the first
+  empty result was the test data being unrepresentative, not a bug. Also hit
+  one client-side hiccup, not a real bug: right after saving a second alert,
+  the page's `router.refresh()` didn't immediately show it in that same
+  render pass — a fresh navigation immediately after showed everything
+  correctly (both alerts, and the right matches), and the database always
+  had the correct row. Noting it in case it recurs elsewhere, not treating
+  it as fixed or as a confirmed bug.
+- Deferred / not done yet: "notified" is figurative — there's no actual
+  notification (email, push, in-app badge) when a new match appears, only a
+  live list a partner has to check. Editing an existing alert isn't
+  supported, only create/delete. No route-based matching (a partner's
+  declared route rather than a single postcode area) — `postcodeArea` here
+  is a single value, unlike Reservations' separate start/end postcodes.
+
+### 2026-07-30 — Book Now (last of the four Phase 3 Work-tab shells)
+- Built: asked to make the call on what Book Now actually is in this system
+  and build it, changeable later — no product brief existed for it the way
+  Reservations/Auction did. Decision made: Book Now is **not** a separate
+  allocation path. It's a narrower, faster-to-act-on view of the exact same
+  click_claim pool Find Work already browses, filtered down to
+  `single-item-transport` — the one category `assign-method.ts` always
+  routes to click_claim regardless of price, so it's the natural "quick job"
+  slice. Reused `find_work_jobs()` and `claim_job()` completely unchanged —
+  zero new migrations, zero new backend surface. The one real UX difference
+  from Find Work: claiming happens right in the list via `ClaimJobButton`
+  (already existed, from Phase 6) instead of linking to a detail page first,
+  since the whole point of "book it now" is one screen, no extra hop. The
+  shell's own comment ("customers will be able to book a partner directly")
+  didn't match AnyVan's actual model — same kind of stale placeholder
+  comment already found and corrected in the Reservations and Alerts shells.
+- Key decisions: no new visual treatment (AnyVan's real Book It Now used a
+  denser photo/table layout) — reused Find Work's card styling to keep this
+  fast and consistent rather than introducing a second list pattern for one
+  page. Verified live end-to-end: inserted a real single-item-transport test
+  job, claimed it straight from the Book Now list, confirmed it landed in My
+  Work with the full address unlocked, then cleaned up the test row. Hit the
+  same automation-only quirk noted in earlier phases where the browser
+  tool's coordinate click didn't register on the first two tries on this
+  particular button (confirmed via a direct DOM click that the button itself
+  works fine, not an app bug — the same thing happened on the Bidding page
+  earlier in this session and was equally not a real issue).
+- Deferred / not done yet: this is an interpretation, explicitly flagged as
+  changeable — if "Book Now" is meant to mean something else (e.g. a
+  customer booking a specific partner directly, matching the old shell
+  comment, or an AnyVan-style dense table view), this needs revisiting
+  rather than extending. All four Phase 3 Work-tab shells (Watching, Alerts,
+  Invitations, Book Now) are now real.
+
+### 2026-07-30 — Partner Insights (reliability dashboard)
+- Built: new `/partner/insights` (nav item added, right under Home —
+  partner nav previously had no Insights entry at all). One RPC,
+  `my_performance_summary()` (migration 0039), returns job count (all-time
+  + last 30 days), average rating + count, deallocation count/total, and a
+  derived booster-eligibility flag. Page also lists the partner's 10 most
+  recent job assignments with their rating (or "Not yet rated"), reusing
+  My Work's fetch-separately-and-match-in-JS convention rather than a join.
+- Key decisions: **deliberately reads live from source tables
+  (job_assignments/ratings/deallocation_charges/performance_management_plans),
+  not `performance_metrics`** — admin's existing `/admin/performance` view
+  (Phase 4) is built on that table, but nothing in this codebase has ever
+  computed a row into it (confirmed 0 rows live). A partner view built on
+  top of that would show blank forever regardless of real activity, so this
+  computes fresh instead. That means partner Insights and admin Performance
+  now read from two different sources for what's nominally the same
+  concept — a real, flagged inconsistency, not a fix to the admin side's
+  gap (that batch-computation piece still doesn't exist for anyone).
+  **On-time pickup %, on-time delivery %, and app usage % are shown as "No
+  data yet" rather than a computed number** — there's no driver app and
+  nothing writes to `status_logs`, so there's no actual-arrival timestamp
+  anywhere to compute an on-time rate from; showing a fabricated percentage
+  would be worse than admitting there's no data, matching AnyVan's own
+  empty-state convention (their real dashboard also just shows "—" for a
+  low-activity account, confirmed from the reviewed screenshots).
+  **Booster eligibility is an explicit interpretation**: eligible whenever
+  the partner has no *active* `performance_management_plans` row — simple,
+  reuses real data, flagged as a chosen rule rather than a spec, same as
+  Book Now's category filter. Verified live against the real test account:
+  job count, "not yet rated" (ratings table is genuinely empty), zero
+  deallocations, and eligible booster status all matched the actual
+  database state.
+- Deferred / not done yet: the on-time/app-usage computation gap is
+  structural — filling it needs either a driver app writing real timestamps
+  or some other event source, not a UI change. No historical trend view
+  (admin's `MetricHistoryChart` has no partner-facing equivalent, since
+  there's no monthly time-series data to chart from live-computed numbers).
+
+### 2026-07-31 — Customer Reviews (four-category ratings)
+- Built: `ratings` gained four category columns (`punctuality_rating`,
+  `communication_rating`, `care_of_goods_rating`, `presentation_rating`,
+  migration 0040) alongside the existing overall `rating`, matching
+  AnyVan's real four-category breakdown confirmed from their screenshots.
+  A `before insert or update` trigger keeps `rating` as the average of
+  whichever category scores are present, so it stays correct without every
+  future caller having to compute it — and without disturbing Insights'
+  `average_rating` (built last turn), which reads `rating` directly. Built
+  the write side too, since a partner-facing reviews page with nothing to
+  show wouldn't prove anything: `RatingForm.tsx` on the customer booking
+  detail page (visible once `matching_status = 'matched'`; a completed-once
+  check via the existing unique constraint on `ratings.job_id` prevents a
+  second submission). Built the read side: `/partner/reviews` (new nav
+  item), showing five score tiles (four categories + overall average) and
+  the individual review list with comments, via a new `partner_reviews()`
+  RPC.
+- Key decisions: **found and fixed a real gap in the original
+  `ratings_insert` policy while building the write path** — it only ever
+  checked `customer_id = current_customer_id()`, never that `job_id`
+  actually belonged to that customer or that `transport_partner_id` was who
+  the job was really assigned to. The existing unique constraint on
+  `ratings.job_id` stopped a duplicate rating on one specific job, but
+  nothing stopped a customer inserting a rating row aimed at an arbitrary
+  job/partner pair. Fixed at the RLS layer directly (both conditions added
+  to the policy's `WITH CHECK`), the same "fix it at the database, not just
+  the UI" principle established in migration 0020 — this one just hadn't
+  been exercised by a real write path until now. **Gated the review form on
+  `matching_status = 'matched'`, not job completion** — the same practical
+  call as the on-time-tracking gap in Insights: nothing in this system
+  currently advances `jobs.status` past `'assigned'` (no driver app), so
+  gating on true delivery completion would make the form permanently
+  unreachable. Flagged as a simplification, not a spec. `partner_reviews()`
+  resolves the reviewing customer's display name the same way
+  `my_message_threads()` does — a partner has no RLS path to another user's
+  `profiles` row directly, so it has to go through a SECURITY DEFINER
+  function rather than a client-side query. Verified the entire loop live,
+  not just via SQL: submitted a real 4-category review as
+  `phase6-customer` against the Office Relocation booking matched to
+  Partner B (5/4/5/4 stars + a comment), confirmed the trigger computed
+  `rating = 4.50` correctly in the database, then confirmed Partner B's
+  `/partner/reviews` showed the right per-category averages, the right
+  overall, the customer's name, and the comment — left as real
+  documentation-worthy test data rather than deleted, same as the existing
+  Phase 6b auction test bookings in `TEST_ACCOUNTS.md`.
+- Deferred / not done yet: no way to edit or dispute a submitted review
+  (matches AnyVan's own apparent behaviour — reviews looked immutable in
+  their screenshots too, not a gap introduced here). No admin visibility
+  into individual reviews beyond what already exists. No rating prompt/
+  reminder flow — a customer only sees the form if they happen to revisit
+  their booking page.
+
+### 2026-07-31 — Partner Guidelines, Route Matcher, Express Interest
+- Built three features in one pass: a one-time Partner Guidelines
+  acceptance gate, Route Matcher (routes/job_recommendations, unused since
+  Phase 2), and Express Interest (the third `allocation_method`, enum value
+  existed, nothing implemented it).
+- **Partner Guidelines** (migration 0041): `transport_partners.guidelines_accepted_at`,
+  a new `/partner/guidelines` page (content sections adapted from AnyVan's
+  own guidelines structure, rewritten not copied) with an accept button,
+  and a redirect gate on Find Work and Book Now specifically — matching
+  AnyVan's own stated scope ("required to qualify for Instant Price jobs"),
+  not applied broadly to every Work tab.
+- **Route Matcher** (migration 0042): non-exclusive by design, unlike
+  Reservations' first-refusal model — a recommendation is a discovery aid
+  ("this job is along a route you're driving"), not a claim; actually
+  winning the job still goes through Find Work/Bidding unchanged. Matching
+  works symmetrically in both creation orders via two triggers (`jobs`
+  insert checks existing routes, `routes` insert checks existing listed
+  jobs), direction-aware (`outbound`/`return`/`both`), postcode-area level.
+  Surfaced as a new section on the existing (already real, not a shell)
+  `/partner/routes` page via `my_route_recommendations()`.
+- **Express Interest** (migration 0043): the harder design problem was
+  *which* jobs get this method. AnyVan tags multi-stop "Journey" jobs with
+  it specifically, and `jobs.work_type` exists for exactly this
+  (`'single'`/`'journey'`/`'auction'`) — but reading `lib/booking/confirm-booking.ts`
+  (Phase 8B, actively developed elsewhere) showed it always writes
+  `'single'` regardless of actual stop count, so that field is currently
+  dead for this purpose. Rather than edit that file — a shared function
+  signature another session depends on — this detects a journey
+  structurally instead: 3+ rows in `job_stops` means a real multi-stop
+  route. That table is populated in a *separate* insert right after the
+  `jobs` insert (also confirmed by reading confirm-booking.ts), so the
+  detection trigger lives on `job_stops`, not `jobs` — a jobs-insert
+  trigger would fire before any stops exist. Used a STATEMENT-level trigger
+  with a transition table so one multi-row stops insert is evaluated once,
+  not once per stop. Only overrides `allocation_method` when it's still
+  `click_claim`/`auction` (assign-method.ts's default), so an
+  already-reservation-matched job is never touched — reservation match
+  (decided earlier, at the jobs insert itself) wins if both would apply.
+  New table `job_interests` (non-binding, no price, no deadline — stays
+  open until the customer acts). Partner side: new `/partner/work/express-interest`
+  tab (`find_express_interest_jobs()`, `express_interest()` — upsert like
+  submit_bid, shows interest count not amounts, same convention as
+  auction's bid count). Customer side: a "Choose your transport partner"
+  section on the booking detail page (`job_interested_partners()`,
+  `select_interested_partner()` — atomic single UPDATE guarded by
+  `matching_status = 'listed'`, same principle as claim_job) — this closes
+  the loop AnyVan's own "Choose your provider" homepage copy described back
+  in Phase 1 but nothing had ever implemented.
+- Key decisions: none of the three touch any file outside this session's
+  own additions except the two Find Work/Book Now edits (the guidelines
+  gate) and the customer booking page (the interest-selection section) —
+  Express Interest's journey detection deliberately avoided
+  confirm-booking.ts entirely, composing purely through triggers so it
+  works regardless of which code created the job. All grants verified
+  clean with `has_function_privilege` before moving on (no anon leaks this
+  time, unlike the auction/messages saga). Verified all three live end to
+  end: (1) a partner without guidelines accepted was redirected away from
+  Find Work, accepted, and was redirected back automatically; (2) a
+  real route (`MH1 → MH2`, `direction = both`) created via the actual UI
+  immediately surfaced an existing listed job as a recommendation; (3) a
+  real 3-stop job was built via direct inserts (matching how
+  confirm-booking.ts actually writes stops), confirmed the trigger flipped
+  `allocation_method` to `express_interest`, a partner expressed interest
+  with a note through the real UI, and the test customer saw that partner
+  and note on their booking page and successfully selected them — job
+  correctly moved to `matched`/`assigned` with the right vehicle. **Also
+  found and fixed a small real bug during this testing**: the Express
+  Interest submit button didn't refresh the page after submitting, so the
+  "N partners interested" count looked stale (the database was correct all
+  along) — added the same `router.refresh()` call every other submit flow
+  in this codebase already uses.
+- **Also noticed, not part of this feature work**: `TEST_ACCOUNTS.md`
+  documents a convention from another session — "Claude Code sessions must
+  not enter passwords into forms," using `auth.admin.generateLink()` magic
+  links instead — that this session's entire testing approach today (and
+  in prior turns) didn't follow, typing test account passwords directly
+  into login forms instead. Flagging this rather than quietly continuing
+  either way; switching to the magic-link approach for future verification
+  in this project.
+- Deferred / not done yet: Route Matcher doesn't consider vehicle capacity
+  (routes has no van-space field the way Reservations does — only what the
+  table itself already declares: postcode/date/category/team_size).
+  Express Interest has no deadline/expiry — an interest sits open until the
+  customer manually picks someone or cancels the job; unlike Auction/
+  Reservations, nothing times it out. No way for a partner to withdraw an
+  expressed interest once sent (only update vehicle/note via re-submitting).
+
+### 2026-07-31 — Find Work Map view, Auction Search nav, Messages templates/notifications
+- Built three more items from the AnyVan comparison: a Map view for Find
+  Work (paused earlier on a privacy/precision question, never resumed), a
+  separate "Auction Search" nav entry, and Messages extras (canned-reply
+  templates + a system-notice inbox).
+- **Map view** (migration 0044): resolves the paused precision question the
+  same way Book Now's category-filter interpretation was — a judgment call,
+  flagged, changeable later. Decision: outward-code precision (e.g. "SW1A"
+  instead of just the "SW" area) for map pins specifically, via a new
+  `app_private.postcode_outward()` alongside the existing `postcode_area()`.
+  `find_work_jobs()` gained two additive output columns
+  (`collection_outward`/`delivery_outward`); existing area columns
+  untouched. New `lib/geo/outcode-batch.ts` (server-side, separate cache
+  from the browser-only `lib/geo/postcodes.ts`), `JobsMap.tsx` (Leaflet +
+  OSM, same tile/attribution setup as `RouteMap.tsx`), and
+  `FindWorkViewToggle.tsx` (List/Map pill toggle wrapping the existing
+  Server Component list). **Auction Search**: AnyVan shows this as a
+  distinct nav entry but it opens the same auction-browsing surface Bidding
+  already does here — added as a second link to the existing Bidding page
+  rather than building a duplicate feature.
+- **Messages templates + notifications** (migration 0045): `message_templates`
+  (partner-owned, full CRUD via RLS) — one unified canned-reply library, not
+  AnyVan's two categorised lists ("Default messages" vs "Bid messages"),
+  since this project's Messages only opens once a job is matched (migration
+  0034) and has no separate pre-match "bid messages" channel to categorise
+  against. New `/partner/messages/templates` management page and a template
+  picker `<select>` wired into the shared `MessageThread.tsx` (an optional
+  `templates` prop the partner thread page passes and the customer thread
+  page doesn't, so nothing changes for customers). `partner_notifications`
+  (system/admin-only inserts, partner can only read + mark read via
+  `mark_notifications_read()`) — new `/partner/notifications` page, plain
+  nav item (not nested under Messages, unlike AnyVan's tab, since Messages
+  here is a flat thread list with no existing tab structure to extend).
+  Wired up one real producer as a working example rather than shipping an
+  empty inbox: `close_expired_auctions()` now inserts a "You won an auction"
+  notice for the winning bid.
+- **Found and fixed a real bug during live testing**: `lib/geo/outcode-batch.ts`
+  originally called a bulk `POST /outcodes` endpoint on postcodes.io that
+  doesn't exist (confirmed via a direct `curl` — it 404s). postcodes.io only
+  supports bulk lookup for full postcodes (`POST /postcodes`); outcodes are
+  single-lookup only (`GET /outcodes/:outcode`). Rewrote to fetch each
+  uncached outcode individually, in parallel — fine at Find Work's scale (a
+  handful of distinct outward codes per page). Caught this because the map
+  showed "No mappable jobs" for a job seeded with a real UK postcode
+  (`SW1A 1AA`/`E1 6AN`); after the fix the pin rendered on London and
+  clicking it navigated to the job.
+- Verified live, end to end, using the magic-link sign-in approach from
+  `TEST_ACCOUNTS.md` (no passwords typed into forms this session): Map view
+  toggled and rendered a real pin that navigated to its job; a template was
+  created, appeared in `/partner/messages/templates`, and correctly
+  populated the message composer on a real conversation, which sent
+  successfully; a real auction win (seeded job + bid, `bidding_closes_at`
+  backdated, `close_expired_auctions()` run by hand — same pattern as the
+  Phase 6b auction tests) produced a notification that rendered unread
+  (coral background), and "Mark all read" correctly cleared it. All test
+  data (temp jobs, bid, notification, template, message) cleaned up
+  afterward.
+- Deferred / not done yet: the existing `2b1873e3…` Phase 6 UI test job has
+  a non-standard test postcode (`MH1`/`MH2`, no inward code) that
+  `postcode_outward()` can't parse — it's correctly excluded from map pins
+  (falsy empty string), same graceful-degradation behavior as an
+  unresolvable real postcode, not a bug. Notifications has only one real
+  producer (auction win); reservation invitations, express-interest
+  selection, and vehicle approval/rejection are equally valid candidates
+  for a notification but out of scope this pass.
+
+### 2026-08-03 — Payments placeholder
+- Replaced the partner Payments page's half-real implementation (real
+  Scheduled/Pending/Transferred tabs and a real `payments` table query, but
+  no invoices, no CSV export, and an `express_pay` badge that only ever
+  displays, never toggles) with a plain "Coming soon" placeholder, matching
+  the existing pattern already used for the admin Support page. Deliberate
+  choice: showing real tabs and a real-looking badge next to features that
+  don't actually work reads as broken, not unfinished — a placeholder is
+  the more honest state while Payments waits its turn behind Profile,
+  Support, and payout calculation. Verified live: the page renders the
+  same "Coming soon" card style, no console errors, other partner nav items
+  unaffected.
+
+### 2026-08-03 — Profile/Account gaps, searchable Help center
+- Filled in the two remaining Profile gaps from the AnyVan comparison
+  (bank details, insurance £ amounts, VAT number, payment methods accepted,
+  category preferences, notification settings) and turned Support/Help
+  from 3 hardcoded FAQs into a real searchable center (migration 0046,
+  fixed by 0047 — see below).
+- **Security decision made before writing any UI**: bank details and VAT
+  number do NOT live on `transport_partners`. That table has a
+  `transport_partners_select_matched` RLS policy (migration 0034) giving a
+  customer matched to a job full-row SELECT access, and RLS is row-level,
+  not column-level — a new column there is visible to that matched
+  customer via a direct PostgREST call, regardless of which columns this
+  codebase's own `select()` calls happen to ask for (the publishable key is
+  public in the browser bundle, so nothing stops a wider request). Put
+  bank/VAT/payment-methods in a new `transport_partner_payment_details`
+  table instead, RLS-scoped to the owning partner (and admin) only, no
+  matched-customer policy at all. Insurance £ cover amounts and category
+  preferences stayed on `transport_partners` — same sensitivity level as
+  the trade_associations/doc-url columns already there.
+- **Category preferences aren't just a saved-but-inert field**: empty
+  means "show me everything" (unchanged default for every existing
+  partner), but a non-empty list now actually filters `find_work_jobs()`,
+  `find_auction_jobs()`, and `find_express_interest_jobs()` — all three
+  share the same `v_partner_id`/`v_has_any_approved` shape, so the same
+  filter clause was added to each via `CREATE OR REPLACE` (no DROP needed,
+  no column list changed, so grants stayed intact — verified with
+  `has_function_privilege` anyway).
+- **Notification settings honesty**: no email/SMS delivery exists anywhere
+  in this codebase (`lib/email/send.ts` is an explicit not-yet-configured
+  seam — see its own comment). Rather than build a decorative toggle that
+  implies working delivery, the copy under the two toggles says plainly
+  they'll take effect once email/SMS delivery is switched on for the
+  platform, and that in-app notifications (migration 0045) work today
+  regardless.
+- **Found and fixed a real bug during live testing**: all three
+  `CREATE OR REPLACE`d RPCs return an `id` output column, and PL/pgSQL
+  implicitly exposes `RETURNS TABLE` column names as variables inside the
+  function body — so the new `where id = v_partner_id` line against
+  `transport_partners` collided with the function's own `id` OUT
+  parameter, throwing `column reference "id" is ambiguous`. Not caught by
+  `tsc` or by testing with an empty category-preferences value (only
+  triggers once a partner actually sets a preference and the RPC runs
+  Postgres's ambiguity check for real). Caught live: set a real preference
+  on the test partner, watched Find Work throw the error. Fixed in
+  migration 0047 — aliased the table (`transport_partners tp`) and
+  qualified the column in all three functions.
+- **Also found and fixed this turn, unrelated to the RPC bug**: ran
+  `npm run types:generate` out of habit to regenerate `types/database.ts`
+  after the migration — the `supabase` CLI isn't installed in this
+  environment, so the command failed but still truncated the file to 0
+  bytes via the `>` redirect. Recovered immediately from the Supabase MCP
+  tool's own (larger-than-inline) output file rather than losing the
+  regenerated types; `npx tsc --noEmit` came back clean afterward with no
+  other damage. Worth remembering: this project has no local `supabase`
+  CLI, only the MCP `generate_typescript_types` tool — don't run
+  `types:generate` expecting it to work.
+- Support/Help: expanded from 3 to 16 real Q&As grounded in what's
+  actually built this session and earlier (Find Work vs Bidding vs Express
+  Interest, Route Matcher, Watching/Alerts, Reservations, message
+  templates, Notifications, 4-category reviews, and an honest "Payments
+  isn't built yet" entry) grouped by topic, with a client-side search box
+  filtering question/answer/topic text. New `lib/constants/partner-faq.ts`
+  (content) and `components/partner/support/FaqSearch.tsx` (search UI) —
+  static content, matching how `SERVICE_CATEGORIES`/`COMPANY_TYPES`
+  already work in this codebase, not a new CMS/database table for content
+  three people edit a year.
+- Verified live end to end: filled in and saved Payment details (bank
+  name/sort code/account number/VAT/payment methods), Insurance cover
+  amounts (£50,000 / £100,000), Job categories, and both notification
+  toggles on the real test partner account — confirmed each persisted via
+  direct SQL, not just optimistic UI. Set a real category preference and
+  watched Find Work correctly narrow to just that category (then hit, and
+  fixed, the ambiguous-`id` bug), reset the preference back to `{}`
+  afterward so it doesn't silently change what other test sessions expect
+  Partner A to see. Help search tested with a noisy multi-topic-matching
+  query ("VAT" — matched via substring inside "reser**vat**ions") and a
+  precise single-match query ("template").
+- Deferred / not done yet: payment methods accepted and bank details are
+  purely informational — nothing reads them yet (Payments is still a
+  placeholder, so there's no payout flow to feed them into). Category
+  preferences only filter the three job-browsing RPCs, not Alerts' saved
+  searches (those already have their own independent category filter) or
+  Reservations/Route Matcher (neither browses a job list the same way).
+
+### 2026-08-03 — Payout/commission calculation
+- `payout_amount` has only ever been set for auction jobs (the winning bid
+  amount, in `close_expired_auctions()` since Phase 6b) — every other
+  allocation method has always inserted with it null, so Find Work's
+  `payout ?? customer_price` fallback has been quietly showing partners the
+  full customer price as their earnings. Flagged as a gap since Phase 6,
+  picked up now with the user's explicit instruction to research AnyVan's
+  real commission/payout model first rather than guess a number.
+- **Research** (see chat for full findings and sources): no single
+  authoritative commission percentage is published for AnyVan's
+  independent Transport Partners specifically. A general summary describes
+  a 60/40 (platform/driver) split for AnyVan's in-house driver network; a
+  driver-advocacy petition (organise.network) cites a harsher 70-75/25-30
+  split for that same in-house group — both describe employed-style
+  drivers, not independent partners who bid their own price the way this
+  project's auction jobs already work. Payout timing is more consistent
+  across sources: funds held 2-5 days from booking to job completion, paid
+  out within ~10 days (processed twice weekly), with an Express Pay option
+  for 4.5+ rated partners to get paid the next business day for a fee
+  (matches the unused `express_pay` column already sitting in `payments`).
+  Presented the findings and asked the user to pick a rate rather than
+  silently choosing one — **25% platform commission (partner keeps 75%)**,
+  the generous end of the researched range.
+- **Built** (migration 0048): a `BEFORE INSERT` trigger on `jobs`
+  (`app_private.set_default_payout_amount()`) computes
+  `payout_amount = round(customer_price * 0.75, 2)` for any job whose
+  `allocation_method` isn't `'auction'` — named to sort alphabetically
+  after `jobs_match_reservation_trigger` (migration 0035) so it sees
+  `NEW.allocation_method` *after* a reservation match may have already
+  overridden it, not the value `assign-method.ts` originally computed.
+  Auction jobs are deliberately excluded — the winning bid already IS the
+  payout, unchanged since Phase 6b, and the entire point of that flow is
+  the partner setting their own price rather than accepting a fixed cut.
+  One-time backfill for every already-existing non-auction job so test
+  data reflects reality immediately, not just new jobs going forward.
+- **Real bug found while reasoning through the trigger interactions, not
+  live testing**: migration 0043's journey-detection trigger can flip a
+  job from `'auction'` to `'express_interest'` (an office-relocation
+  journey, say) — but `express_interest` jobs never go through bidding, so
+  without a fix that job's `payout_amount` would've stayed permanently
+  null (skipped at insert for being `'auction'` at the time, then
+  reassigned to a method that never sets it either). Fixed by extending
+  `mark_journey_express_interest()` to also set
+  `payout_amount = coalesce(payout_amount, round(customer_price * 0.75, 2))`
+  in the same `UPDATE` that flips the allocation method.
+- **Also extended**: `find_express_interest_jobs()` and
+  `my_job_invitations()` now return `payout_amount` too (DROP+CREATE,
+  re-granted, verified via `has_function_privilege`) — both pages
+  previously told a partner "Customer was quoted £X — not your payout"
+  next to the price, which was true when payout genuinely wasn't knowable
+  pre-match, but is now stale copy once a flat 75% figure is fixed at
+  insert. Both pages now show the real payout instead. Deliberately did
+  NOT touch Watching or Alerts this pass — both browse the same
+  click_claim-shaped jobs and could show real payout too, but neither
+  currently displays a "not your payout" disclaimer (just a plain price),
+  so there's no active inaccuracy to fix there, only an enhancement —
+  left for a future pass rather than growing this one further.
+- Verified live: Find Work showed £110.25 (75% of £147) instead of the
+  full £147 for the existing Phase 6 test job. Seeded a temporary
+  express_interest test job (£400 customer price) and confirmed the
+  trigger computed £300 payout at insert, then confirmed the Express
+  Interest page rendered "£300.00 payout" correctly; cleaned up
+  afterward. Invitations page uses the identical conditional/column, not
+  separately live-tested.
+- Deferred / not done yet: Insights has no earnings total to fix (it never
+  computed one from payout_amount or customer_price in the first place —
+  confirmed by reading migration 0039, not assumed). Watching/Alerts could
+  show real payout_amount instead of a plain customer_price line, noted
+  above as a future enhancement, not a fix.
+
+### 2026-08-03 — Notify partners of matches (Alerts, Route Matcher, Reservations)
+- Surfaced by auditing how partners actually get leads: Alerts, Route
+  Matcher, and Reservation matching all already compute real matches
+  server-side, but none of them told the partner — only
+  `close_expired_auctions()` (migration 0045) wrote to
+  `partner_notifications`. Migration 0049 adds the missing notification
+  insert to all three: Alerts gets a new `AFTER INSERT ON jobs` trigger
+  (`notify_alert_matches()`, mirroring `alert_matches()`'s exact filter
+  logic per-job instead of per-partner); Route Matcher's existing two
+  triggers (job→routes and route→jobs directions) each got their `INSERT
+  ... ON CONFLICT DO NOTHING` restructured into a CTE with `RETURNING`, so
+  only genuinely new recommendations notify, not conflict no-ops;
+  Reservation matching's existing trigger got one more insert once a match
+  is found.
+- **Found and fixed a real regression this same migration introduced**,
+  caught by re-querying a test job after insert instead of trusting the
+  `RETURNING` clause: this session's own earlier notes describe a bug
+  where the original `BEFORE INSERT` reservation-matching trigger caused a
+  foreign-key violation, "fixed in migration 0036" by switching to `AFTER
+  INSERT` and an explicit `UPDATE jobs SET ...` instead of assigning
+  `NEW.allocation_method` directly. That fix was applied to the live
+  database but **the migration file was never saved locally** — the
+  migration folder jumps `0035` straight to `0037`. Migration 0049's
+  `CREATE OR REPLACE FUNCTION` was written against the only version that
+  exists on disk (0035's, pre-fix), which still assigns to `NEW` — a
+  no-op on a trigger that's actually `AFTER INSERT` live, since Postgres
+  discards a row-level `AFTER` trigger's return value. The side-effect
+  writes (job_invitations, reservation status, the new notification) all
+  still fired correctly; only `jobs.allocation_method` silently failed to
+  become `'reservation'`. Fixed in migrations 0050 (explicit `UPDATE`
+  instead of `NEW`-assignment, plus a `DROP`+`CREATE TRIGGER ... AFTER
+  INSERT` so a from-scratch replay of local migration files converges
+  correctly too, not just this already-patched live database — 0035 on
+  disk still says `BEFORE INSERT` and always will) and 0051 (the payout
+  trigger from migration 0048 is `BEFORE INSERT`, an entirely separate
+  phase from this `AFTER INSERT` trigger, not just alphabetically after it
+  as 0048 assumed — so a job that starts as `'auction'` and then gets
+  reservation-matched needed the same `payout_amount` backfill 0048 already
+  gave the express-interest journey trigger, and hadn't gotten it here).
+- **Takeaway for future migrations touching existing triggers**: query
+  `pg_get_triggerdef()` for the live trigger before assuming a local
+  migration file reflects current reality, especially for any trigger this
+  session's own history mentions being patched — the local file tree has
+  at least one confirmed gap (0036) and there is no guarantee it's the
+  only one.
+- Verified live, all three, with real seeded data then cleaned up: a
+  saved search + matching job produced a notification; a route + a job
+  that matches it produced a notification (both directions — job created
+  after the route, and route created after the job); a reservation +
+  matching job produced a notification AND (after the 0050/0051 fixes)
+  correctly flipped `allocation_method` to `'reservation'` and backfilled
+  `payout_amount` even when the job started as `'auction'`. Confirmed
+  end-to-end in the browser: the alert notification rendered correctly on
+  `/partner/notifications`.
+- Deferred / not done yet: Alerts' new trigger only fires on `jobs` INSERT,
+  same scope as the existing pull-based `alert_matches()` — if a job's
+  price/category ever changed after listing (nothing in this codebase does
+  that today), a newly-matching alert wouldn't notify retroactively. A
+  journey job that starts as `'auction'`/`'click_claim'` and gets
+  reclassified to `'express_interest'` shortly after (migration 0043's
+  job_stops trigger) may have already triggered an Alerts notification
+  pointing at a job that's since moved to a different browsing surface —
+  a minor, low-probability staleness window, not fixed this pass.
+
+### 2026-08-03 — Partner-facing disputes
+- The admin side (migration 0017) and RLS (migration 0007, "partner can
+  read their own and update it only to submit a dispute") have existed
+  since early phases, and the admin disputes list's own empty-state copy
+  says "Disputed deallocation charges will show up here as soon as
+  partners raise them" — but nothing in the codebase ever let a partner
+  actually see a charge or raise a dispute. Confirmed by grepping the
+  whole codebase for `deallocation_charges`: only admin pages touched it.
+  Also confirmed nothing anywhere creates a charge in the first place —
+  the `deallocation_charges_insert` policy allows `is_admin()`, but no
+  admin UI/RPC exercises it either. That part stays out of scope; this
+  pass is specifically the partner-facing view/dispute half.
+- **Real semantic gap fixed while building this**: the admin dispute
+  detail page treated `reason` as if it were the partner's dispute
+  explanation ("Reason ... Submitted {created_at}"), but it should mean
+  "why this charge exists" (admin-authored, at charge creation) —
+  conflating the two would mean a partner disputing a charge overwrites
+  the very reason they're disputing. Since no real data has ever been
+  written here, fixed the ambiguity now rather than perpetuating it: new
+  `dispute_reason` column (migration 0052), admin detail page updated to
+  show both "Reason for charge" and, once submitted, "Partner's dispute"
+  as separate sections.
+- **Built**: `/partner/disputes` — Needs response / Submitted / Resolved
+  tabs, mirroring the admin list's shape (direct table queries against
+  `deallocation_charges`, no RPC needed, RLS already scopes it to the
+  caller's own rows). `/partner/disputes/[id]` — same linked-job/
+  reservation detail layout as the admin side, plus a `RaiseDisputeForm`
+  (textarea + submit) shown only while `dispute_status = 'none'`, which
+  flips it to `'submitted'` and saves `dispute_reason` — a direct
+  `.update()` gated by `.eq("dispute_status", "none")` so a double-submit
+  can't silently overwrite an already-submitted dispute. Linked from
+  Insights' existing "Deallocations" stat tile (added an optional `href`
+  prop to the shared `StatTile` component) rather than a new top-level nav
+  item, matching the "link from the relevant parent page" pattern already
+  used for Message Templates.
+- Verified live, the full loop, both sides: seeded a test charge via SQL
+  (as an admin eventually would) — showed up under the partner's "Needs
+  response" tab; submitted a dispute with a real reason — flipped to
+  "Awaiting review", form disappeared; signed in as
+  `admin-test@example.com` — the charge now appeared in the admin
+  disputes list (previously impossible, since nothing ever got partners
+  past `dispute_status = 'none'`) with both "Reason for charge" and
+  "Partner's dispute" showing distinctly; waived it as admin — partner's
+  "Resolved" tab correctly showed "Waived" with the resolution text.
+  Confirmed the Insights tile is a real link to `/partner/disputes`.
+  Cleaned up the test charge afterward.
+- Deferred / not done yet: still nothing creates a `deallocation_charges`
+  row automatically or through any admin UI — a partner can now respond
+  to a charge once one exists, but nothing in this codebase produces one
+  yet. The reservation unfilled-fee candidate from the same audit would be
+  the natural first real producer, mirroring how `close_expired_auctions()`
+  became the first real `partner_notifications` producer.
+
+### 2026-08-03 — Reservation unfilled-fee
+- Closes the last of the four leads/trust gaps from this session's audit:
+  real AnyVan pays a partner a fee when it can't fill a reservation they
+  held open ("if a partner reserves availability and AnyVan can't fill it,
+  AnyVan pays a fee for the reservation anyway"). Nothing modelled that —
+  a reservation that never got matched just sat at `'pending'` forever,
+  with no expiry, no compensation, no record of it having gone unfilled.
+- **Deliberately not `deallocation_charges`**: that table (and the
+  partner-facing dispute workflow built earlier this same session) is
+  money the *partner* owes, with an "uphold/waive" framing that doesn't
+  make sense for money flowing the other way. New `reservation_compensations`
+  table instead — system-generated only (no partner or admin write policy
+  at all, same shape as `partner_notifications`; only the SECURITY DEFINER
+  cron function can write it).
+- **Fee amount asked, not researched**: unlike the payout commission %
+  (where real published AnyVan numbers existed to weigh), no fee schedule
+  for unfilled reservations is public anywhere. Asked the project owner
+  for a number or formula before building; got no response. Proceeded
+  with the earlier-presented recommended default — a flat £50 per
+  unfilled reservation — rather than blocking on it. One literal in
+  `expire_unfilled_reservations()`, trivial to change or turn into a
+  formula later.
+- **Built**: `expire_unfilled_reservations()`, same shape and cadence
+  (every 5 minutes) as `close_expired_auctions()`/`expire_job_invitations()`
+  — finds reservations where `status in ('pending', 'partially_matched')`
+  and `date < current_date` (the day passed without ever reaching
+  `'fully_booked'`), marks each `'expired'`, inserts a £50 compensation
+  row, and notifies the partner. `'accepted'` is a Phase 2 enum value no
+  code has ever set — deliberately left unhandled rather than guessing
+  what it should do. Partner-facing: the existing Reservations page's
+  Historic tab now shows "£50.00 owed to you — went unfilled" under any
+  expired reservation, fetched with one extra query keyed off the
+  already-loaded expired IDs — no new page needed, the status badge and
+  tab split already existed.
+- Verified live: seeded a `'pending'` reservation dated yesterday, ran
+  `expire_unfilled_reservations()` manually (same "call the cron function
+  directly" pattern used for `close_expired_auctions()` earlier), confirmed
+  status flipped to `'expired'`, a £50.00 compensation row was created,
+  and a notification was generated — then confirmed both the Historic
+  reservations tab and the Notifications page rendered it correctly.
+  Cleaned up afterward.
+- Deferred / not done yet: the fee is a flat rate regardless of reservation
+  type (`full_day` vs `custom`) or declared price band (`min_price`/
+  `max_price`) — real AnyVan likely scales this, but no rate schedule
+  exists to model it against. No way for a partner to dispute an unfilled-
+  reservation fee the way they can a deallocation charge (arguably moot,
+  since this is money owed *to* them, not a charge against them).
+
+### 2026-08-03 — End-to-end simulation: 3 real bookings through the actual form
+- Not a feature build — a live demonstration that the full pipeline this
+  session spent most of its time on (quote form → checkout →
+  category/allocation derivation → payout calculation → partner
+  discovery → claim/bid/express-interest → customer selection) actually
+  works together, end to end, through the real UI on both sides. Every
+  other test job created this session was inserted directly via SQL for
+  speed; these three went through the real multi-step quote wizard,
+  autocomplete postcode lookup, real item catalogue, real date/price
+  calendar, and real checkout form, with real (if throwaway) customer
+  accounts.
+- Three fresh customer accounts (`sim-customer-1/2/3@moversnowtest.com`,
+  magic-link only, no password ever set) each booked a real move chosen to
+  land on a different allocation path:
+  - **Click & Claim**: a single small box (£45) correctly derived
+    `single-item-transport` and forced `click_claim`; Partner A claimed it
+    through Find Work, revealing the full address only after claiming
+    (privacy boundary confirmed live, not just in code).
+  - **Auction**: 12 office desks (8.82 m³, £163) correctly derived
+    `office-relocation` and forced `auction`; Partner A bid £120 through
+    Bidding, the auction was closed early by hand (same
+    `close_expired_auctions()` technique as the Phase 6b tests) to award
+    it without waiting 24h, and `payout_amount` correctly became the
+    winning bid.
+  - **Express Interest**: a genuine 3-stop route (using "+ Add an extra
+    stop" on the real Address step, not a shortcut) started as
+    `click_claim`/home-removals and was correctly reclassified to
+    `express_interest` by the journey trigger purely from stop count.
+    Partner B — the one account that had never accepted the Partner
+    Guidelines all session — hit that real gate for the first time,
+    accepted it live, expressed interest with a real note through the UI,
+    and was picked by the customer from the real "Choose your transport
+    partner" screen, which correctly showed the note and triggered the
+    real 4-category "Rate your move" section appearing afterward.
+- Confirmed the payout figures were correct at every step by checking the
+  database directly rather than trusting the UI alone — £33.75 (75% of
+  £45), £120 (the winning bid, not a formula), £78 (75% of £104) — the
+  same trigger from migration 0048, exercised for the first time by a
+  booking that went through the actual checkout route handler
+  (`/api/quote/[id]/confirm`) instead of a direct SQL insert.
+- Deliberately left all three bookings and accounts in place afterward
+  (documented in TEST_ACCOUNTS.md) rather than cleaning them up like every
+  other test job this session — they're a real, inspectable trail of the
+  whole system working, not throwaway verification noise.
+
+### 2026-08-04 — Rating-gated access
+- The last of the three "leads/trust" candidates from the earlier audit.
+  Researched AnyVan thresholds, applied as-is per explicit instruction
+  ("threshold just same as anyvan"): below 4.5★ average blocks a partner
+  from all job discovery entirely; new partners (fewer than 30 completed
+  jobs) stay capped to Single Item Transport only until they graduate —
+  30 total jobs AND a 4.8+ average. 4.5+ also unlocks Express Pay
+  eligibility, surfaced honestly on Insights (no real payout-timing system
+  exists yet, so this is a status, not a working toggle).
+- New shared helper `app_private.partner_job_access()` computes
+  `avg_rating`/`total_jobs`/`is_blocked`/`is_probation` once, reusing the
+  exact same rating/job-count definitions `my_performance_summary()`
+  already used — no second, possibly-diverging definition of "how many
+  jobs" or "what's the rating" introduced. Wired into all three job-
+  browsing RPCs (`find_work_jobs`, `find_auction_jobs`,
+  `find_express_interest_jobs`): blocked partners get an early empty
+  return (same pattern as the existing `v_partner_id is null` check);
+  probation partners get one more `WHERE` clause restricting to
+  `single-item-transport`. `my_performance_summary()` extended (DROP+CREATE,
+  columns added) with `job_access_blocked`, `job_access_probation`,
+  `jobs_until_full_access`, `express_pay_eligible`.
+- **Deliberately scoped to browsing only** — Reservations and Route
+  Matcher are partner-initiated declarations, not browsing, and gating
+  those raises separate UX questions (does a blocked partner's existing
+  reservation stay live? get cancelled?) this pass doesn't answer.
+  **Deliberately skipped the admin-facing "4.7★ intervention" flag** from
+  the same research — the admin Partner Performance page already reads
+  from `performance_metrics`, a cache table migration 0039 documented as
+  having zero rows ever written to it. Wiring a new flag into an
+  already-empty page would just be more dead UI; fixing that page to
+  compute live (the same fix `my_performance_summary()` already got) is a
+  separate, pre-existing gap, not part of this one.
+- Verified live, all three states, on the real test partner account:
+  **probation** (3 jobs, no rating) — Insights showed "Building trust — 27
+  more jobs to unlock full access," Find Work correctly hid the existing
+  Office Relocation job while it had previously been visible; **blocked**
+  (seeded a real 2★ rating) — Insights showed "Job access restricted,"
+  Find Work returned nothing at all, including a freshly-seeded Single
+  Item Transport job that would have passed the probation filter,
+  confirming blocked correctly overrides probation; **restored** — deleted
+  the test rating, confirmed the partner reverted to probation
+  automatically (no cached/stale state, since access tier is computed
+  live on every call, not stored). All test data cleaned up afterward.
+- Deferred / not done yet: no way for an established partner who's above
+  30 jobs but averaging between 4.5 and 4.79 to ever "graduate" under this
+  literal reading of the researched rule (it requires 4.8+, not just
+  30 jobs) — flagged as a real edge case, not fixed, since the project
+  owner asked for AnyVan's exact thresholds and this is what a faithful
+  reading of them produces. Adjustable by changing one constant in
+  `partner_job_access()` if it turns out too strict in practice.
+
+### 2026-08-04 — Admin manual override (assign/reassign a job)
+- Closes the "no admin allocation desk" gap from the AnyVan alignment
+  check: allocation has been 100% algorithmic since Phase 6, with no way
+  for an admin to intervene when the normal channels don't produce a
+  result. New `admin_assign_job(job_id, transport_partner_id, vehicle_id)`
+  RPC — validates the chosen vehicle is approved and compatible with the
+  job's category, flips `matching_status`/`status` to matched/assigned,
+  upserts `job_assignments` (the table's `job_id unique` constraint makes
+  this a clean single-row assign-or-reassign, not an insert-then-delete
+  dance), and notifies the newly assigned partner. If this is a
+  reassignment (a different partner already had it), the displaced
+  partner gets their own notification too, so they don't keep thinking
+  they have a job that's been taken away.
+- **Deliberately bypasses rating-gated access** (migration 0054, built
+  this same session) — an admin manually placing a job with a specific
+  partner is exactly the override case that gate isn't meant to block.
+  Vehicle compatibility is still enforced server-side regardless, so an
+  admin can't assign a job to a partner with no working vehicle for it.
+- **New admin section built from scratch** — no admin Jobs view existed
+  at all before this. `/admin/jobs` (Needs assignment / Assigned tabs,
+  reusing the same list-page shape as Disputes & Charges) and
+  `/admin/jobs/[id]` (route, current assignment if any, and the
+  assign/reassign form). Eligible partners for the picker are computed by
+  filtering approved vehicles to ones compatible with the job's category
+  (same motorbike-compatibility rule used everywhere else), fetched
+  directly rather than through a new RPC — `jobs_select`/`vehicles_select`
+  already grant admin full access, same pattern the Disputes and Vehicle
+  Approvals admin pages already use.
+- Verified live: seeded a real unassigned job, assigned it to Partner B
+  through the actual admin UI — confirmed `job_assignments` updated,
+  Partner B got a notification. Reassigned the same job to Partner A —
+  UI correctly showed "Reassigned — the previous partner has been
+  notified," confirmed in the database that `job_assignments` held
+  exactly one row (updated, not duplicated) and that Partner B received
+  the displaced-partner notification. Confirmed the Jobs list page shows
+  the final state correctly. All test data cleaned up afterward.
+- Deferred / not done yet: no price renegotiation as part of the
+  override — real AnyVan's ops desk also negotiates rates with partners
+  when reassigning; this only reassigns at whatever `payout_amount` the
+  job already has. No audit trail of who reassigned what or why beyond
+  the two notifications this generates — a real admin-actions log is a
+  separate, larger feature.
+
+### 2026-08-04 — Customer-facing move protection / liability cover
+- Closes the "customer-facing cover" gap from the AnyVan alignment check,
+  using real figures sourced from Ecogreen's actual Terms & Conditions
+  instead of invented numbers or AnyVan's marketing "£50k complimentary
+  cover" framing (which this business's contract doesn't offer). Every
+  move already carries a standard liability cap under the T&Cs — £25 per
+  box, £50 per item, capped at £1,000 for the whole move, with a £100
+  deductible per claim — at no extra charge; those are constants
+  (`src/lib/constants/liability-cover.ts`), not per-booking data.
+- **"Extended Liability Cover" is modelled as a request, not a priced
+  add-on** — the T&Cs have no fixed rate for it (clause 11.3: "subject to
+  our written acceptance, applicable pricing... rate advised"), so
+  checkout only captures a declared value and an optional note for staff
+  to follow up and quote directly, the same way the real business already
+  does it. It never affects the booked price, and it's explicitly labelled
+  as not insurance / not FCA-regulated everywhere it's shown, reusing the
+  T&Cs' own wording rather than paraphrasing it.
+- Migration 0056: `cover_tier` enum (`standard` / `extended_requested`)
+  plus `extended_cover_declared_value` and `extended_cover_notes` on both
+  `quotes` (captured at checkout, same pattern as `access_notes`) and
+  `jobs` (copied over by `confirmBookingAndCreateJob` so the request is
+  visible without joining back to the quote).
+- New "Move protection" section in `CheckoutForm` between the notes and
+  payment-placeholder sections: standard cover figures shown to every
+  customer, plus an optional "Request Extended Liability Cover" checkbox
+  that reveals a declared-value field and notes. `OrderSummary` and the
+  customer booking detail page (`/customer/bookings/[id]`) both show a
+  matching "What's covered" / "Move protection" summary, including the
+  declared value when Extended Cover was requested.
+- Verified live: created a real quote through the public quote API,
+  booked it through the actual `/quote/checkout` UI as a signed-in test
+  customer with Extended Cover requested (£3,500 declared value + a
+  note) — confirmed the price stayed £53.00 (unaffected by the request),
+  the `jobs` row got `cover_tier = 'extended_requested'` with the
+  declared value and note copied over correctly, and the booking detail
+  page renders "Extended Cover requested — £3,500 declared value. Our
+  team will be in touch to confirm pricing." Also confirmed the default
+  (no request) path shows just the standard-cover copy. `npx tsc
+  --noEmit` clean. Test booking left in place (see TEST_ACCOUNTS.md).
+- Deferred / not done yet: no admin-facing queue for Extended Cover
+  requests yet — today staff would have to query `jobs` directly by
+  `cover_tier = 'extended_requested'` to find them; a real ops workflow
+  would need a list view (similar to Disputes) and a way to record the
+  quoted rate once agreed. No rate card exists because the business's own
+  T&Cs don't have one — this needs a real decision from the business, not
+  a guessed number.
