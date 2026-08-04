@@ -22,6 +22,8 @@ export function ReservationForm({
   const [endTime, setEndTime] = useState("");
   const [startPostcode, setStartPostcode] = useState("");
   const [endPostcode, setEndPostcode] = useState("");
+  const [teamSize, setTeamSize] = useState<"1" | "2" | "flexible">("1");
+  const [vanSpaceM3, setVanSpaceM3] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +49,11 @@ export function ReservationForm({
       end_time: type === "custom" ? endTime || null : null,
       start_postcode: startPostcode || null,
       end_postcode: endPostcode || null,
+      // "Flexible" means we can commit to either a 1- or 2-person job —
+      // stored as null rather than a made-up number so the future matching
+      // engine can tell "no preference" apart from "exactly one person."
+      team_size: teamSize === "flexible" ? null : Number(teamSize),
+      van_space_m3: vanSpaceM3 ? Number(vanSpaceM3) : null,
       min_price: minPrice ? Number(minPrice) : null,
       max_price: maxPrice ? Number(maxPrice) : null,
     });
@@ -152,6 +159,34 @@ export function ReservationForm({
           onChange={(e) => setEndPostcode(e.target.value)}
         />
       </div>
+
+      <div className="flex flex-col gap-1.5">
+        <span className="text-sm font-medium text-ink-800">How many people are working?</span>
+        <div className="flex gap-4">
+          {(["1", "2", "flexible"] as const).map((option) => (
+            <label key={option} className="flex items-center gap-2 text-sm text-ink-800">
+              <input
+                type="radio"
+                name="teamSize"
+                checked={teamSize === option}
+                onChange={() => setTeamSize(option)}
+                className="accent-brand-600"
+              />
+              {option === "flexible" ? "Flexible" : option}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <FormField
+        label="Available van space (m³)"
+        type="number"
+        min={0}
+        step="0.5"
+        hint="How much load space you have free for this reservation."
+        value={vanSpaceM3}
+        onChange={(e) => setVanSpaceM3(e.target.value)}
+      />
 
       <div className="grid grid-cols-2 gap-4">
         <FormField

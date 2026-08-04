@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PlusIcon, CalendarIcon } from "@/components/icons";
+import { CancelReservationButton } from "@/components/partner/reservations/CancelReservationButton";
 
 export const metadata: Metadata = { title: "Reservations" };
 
@@ -35,13 +36,33 @@ export default async function PartnerReservationsPage({
 
   let query = supabase
     .from("reservations")
-    .select("id, date, start_time, end_time, type, start_postcode, end_postcode, status, min_price, max_price")
+    .select(
+      "id, date, start_time, end_time, type, start_postcode, end_postcode, status, min_price, max_price, team_size, van_space_m3"
+    )
     .eq("transport_partner_id", partner!.id)
     .order("date", { ascending: tab === "current" });
 
   query = tab === "current" ? query.gte("date", today) : query.lt("date", today);
 
   const { data: reservations } = await query;
+
+  // reservation_compensations is only ever written by expire_unfilled_
+  // reservations() (migration 0053) — the fee owed when a reservation's
+  // date passed without ever becoming fully_booked. Only historic
+  // reservations can have one, but fetching unconditionally is simpler
+  // than branching the query, and empty on the current tab either way.
+  const expiredIds = (reservations ?? [])
+    .filter((r) => r.status === "expired")
+    .map((r) => r.id);
+  const { data: compensations } = expiredIds.length
+    ? await supabase
+        .from("reservation_compensations")
+        .select("reservation_id, amount")
+        .in("reservation_id", expiredIds)
+    : { data: [] };
+  const compensationByReservationId = new Map(
+    (compensations ?? []).map((c) => [c.reservation_id, c.amount])
+  );
 
   return (
     <div>
@@ -105,10 +126,28 @@ export default async function PartnerReservationsPage({
                   {[reservation.start_postcode, reservation.end_postcode].filter(Boolean).join(" → ") ||
                     "No route set"}
                 </p>
+                <p className="text-xs text-ink-700">
+                  {reservation.team_size ? `${reservation.team_size} person` : "Flexible crew"}
+                  {reservation.van_space_m3 != null ? ` · ${reservation.van_space_m3}m³ free` : ""}
+                  {reservation.min_price != null || reservation.max_price != null
+                    ? ` · £${reservation.min_price ?? "0"}–£${reservation.max_price ?? "any"}`
+                    : ""}
+                </p>
+                {compensationByReservationId.has(reservation.id) && (
+                  <p className="mt-1 text-sm font-bold text-mint-600">
+                    £{Number(compensationByReservationId.get(reservation.id)).toFixed(2)} owed to you —
+                    went unfilled
+                  </p>
+                )}
               </div>
-              <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold capitalize text-brand-700">
-                {reservation.status.replace(/_/g, " ")}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold capitalize text-brand-700">
+                  {reservation.status.replace(/_/g, " ")}
+                </span>
+                {tab === "current" && reservation.status === "pending" && (
+                  <CancelReservationButton reservationId={reservation.id} />
+                )}
+              </div>
             </div>
           ))}
         </div>
