@@ -72,6 +72,73 @@ export type Database = {
           },
         ]
       }
+      customer_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          customer_id: string
+          id: string
+          job_id: string | null
+          payment_method_type: string | null
+          provider: string | null
+          provider_payment_id: string | null
+          quote_id: string
+          status: Database["public"]["Enums"]["customer_payment_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          customer_id: string
+          id?: string
+          job_id?: string | null
+          payment_method_type?: string | null
+          provider?: string | null
+          provider_payment_id?: string | null
+          quote_id: string
+          status?: Database["public"]["Enums"]["customer_payment_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          customer_id?: string
+          id?: string
+          job_id?: string | null
+          payment_method_type?: string | null
+          provider?: string | null
+          provider_payment_id?: string | null
+          quote_id?: string
+          status?: Database["public"]["Enums"]["customer_payment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           created_at: string
@@ -105,6 +172,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          dispute_reason: string | null
           dispute_status: Database["public"]["Enums"]["dispute_status"]
           id: string
           job_id: string | null
@@ -118,6 +186,7 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string
+          dispute_reason?: string | null
           dispute_status?: Database["public"]["Enums"]["dispute_status"]
           id?: string
           job_id?: string | null
@@ -131,6 +200,7 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          dispute_reason?: string | null
           dispute_status?: Database["public"]["Enums"]["dispute_status"]
           id?: string
           job_id?: string | null
@@ -207,6 +277,54 @@ export type Database = {
           },
         ]
       }
+      item_catalogue: {
+        Row: {
+          category: Database["public"]["Enums"]["item_category"]
+          created_at: string
+          height_cm: number
+          id: string
+          is_active: boolean
+          length_cm: number
+          name: string
+          search_terms: string[]
+          sort_order: number
+          updated_at: string
+          volume_m3: number
+          weight_kg: number | null
+          width_cm: number
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["item_category"]
+          created_at?: string
+          height_cm: number
+          id?: string
+          is_active?: boolean
+          length_cm: number
+          name: string
+          search_terms?: string[]
+          sort_order?: number
+          updated_at?: string
+          volume_m3: number
+          weight_kg?: number | null
+          width_cm: number
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["item_category"]
+          created_at?: string
+          height_cm?: number
+          id?: string
+          is_active?: boolean
+          length_cm?: number
+          name?: string
+          search_terms?: string[]
+          sort_order?: number
+          updated_at?: string
+          volume_m3?: number
+          weight_kg?: number | null
+          width_cm?: number
+        }
+        Relationships: []
+      }
       job_assignments: {
         Row: {
           assigned_at: string
@@ -269,27 +387,88 @@ export type Database = {
           },
         ]
       }
-      job_invitations: {
+      job_interests: {
         Row: {
           created_at: string
           id: string
           job_id: string
+          note: string | null
+          status: string
+          transport_partner_id: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          note?: string | null
+          status?: string
+          transport_partner_id: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          note?: string | null
+          status?: string
+          transport_partner_id?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_interests_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_interests_transport_partner_id_fkey"
+            columns: ["transport_partner_id"]
+            isOneToOne: false
+            referencedRelation: "transport_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_interests_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_invitations: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          job_id: string
+          reservation_id: string | null
           status: Database["public"]["Enums"]["invitation_status"]
           transport_partner_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          expires_at?: string | null
           id?: string
           job_id: string
+          reservation_id?: string | null
           status?: Database["public"]["Enums"]["invitation_status"]
           transport_partner_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          expires_at?: string | null
           id?: string
           job_id?: string
+          reservation_id?: string | null
           status?: Database["public"]["Enums"]["invitation_status"]
           transport_partner_id?: string
           updated_at?: string
@@ -303,10 +482,77 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "job_invitations_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "job_invitations_transport_partner_id_fkey"
             columns: ["transport_partner_id"]
             isOneToOne: false
             referencedRelation: "transport_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_items: {
+        Row: {
+          catalogue_item_id: string | null
+          created_at: string
+          custom_name: string | null
+          height_cm: number | null
+          id: string
+          job_id: string
+          length_cm: number | null
+          quantity: number
+          updated_at: string
+          volume_m3: number
+          weight_kg: number | null
+          width_cm: number | null
+        }
+        Insert: {
+          catalogue_item_id?: string | null
+          created_at?: string
+          custom_name?: string | null
+          height_cm?: number | null
+          id?: string
+          job_id: string
+          length_cm?: number | null
+          quantity?: number
+          updated_at?: string
+          volume_m3?: number
+          weight_kg?: number | null
+          width_cm?: number | null
+        }
+        Update: {
+          catalogue_item_id?: string | null
+          created_at?: string
+          custom_name?: string | null
+          height_cm?: number | null
+          id?: string
+          job_id?: string
+          length_cm?: number | null
+          quantity?: number
+          updated_at?: string
+          volume_m3?: number
+          weight_kg?: number | null
+          width_cm?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_items_catalogue_item_id_fkey"
+            columns: ["catalogue_item_id"]
+            isOneToOne: false
+            referencedRelation: "item_catalogue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_items_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
         ]
@@ -356,6 +602,62 @@ export type Database = {
           },
         ]
       }
+      job_stops: {
+        Row: {
+          address_line: string | null
+          address_text: string | null
+          created_at: string
+          floor: Database["public"]["Enums"]["floor_level"]
+          has_lift: boolean
+          id: string
+          job_id: string
+          lat: number | null
+          lng: number | null
+          outcode: string | null
+          postcode: string | null
+          sequence: number
+          updated_at: string
+        }
+        Insert: {
+          address_line?: string | null
+          address_text?: string | null
+          created_at?: string
+          floor?: Database["public"]["Enums"]["floor_level"]
+          has_lift?: boolean
+          id?: string
+          job_id: string
+          lat?: number | null
+          lng?: number | null
+          outcode?: string | null
+          postcode?: string | null
+          sequence: number
+          updated_at?: string
+        }
+        Update: {
+          address_line?: string | null
+          address_text?: string | null
+          created_at?: string
+          floor?: Database["public"]["Enums"]["floor_level"]
+          has_lift?: boolean
+          id?: string
+          job_id?: string
+          lat?: number | null
+          lng?: number | null
+          outcode?: string | null
+          postcode?: string | null
+          sequence?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_stops_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_watchlist: {
         Row: {
           created_at: string
@@ -397,6 +699,7 @@ export type Database = {
       }
       jobs: {
         Row: {
+          access_notes: string | null
           allocation_method:
             | Database["public"]["Enums"]["allocation_method"]
             | null
@@ -406,7 +709,9 @@ export type Database = {
           collection_postcode: string
           collection_window_end: string | null
           collection_window_start: string | null
+          cover_tier: Database["public"]["Enums"]["cover_tier"]
           created_at: string
+          crew_size: number | null
           customer_id: string
           customer_price: number | null
           delivery_address: string | null
@@ -415,16 +720,23 @@ export type Database = {
           delivery_window_start: string | null
           distance_miles: number | null
           estimated_duration_minutes: number | null
+          extended_cover_declared_value: number | null
+          extended_cover_notes: string | null
+          helper_included: boolean
           id: string
           listed_at: string
           matching_status: Database["public"]["Enums"]["matching_status"]
           payout_amount: number | null
+          price_breakdown: Json | null
+          quote_id: string | null
           status: Database["public"]["Enums"]["job_status"] | null
           title: string
+          total_volume_m3: number | null
           updated_at: string
           work_type: Database["public"]["Enums"]["work_type"]
         }
         Insert: {
+          access_notes?: string | null
           allocation_method?:
             | Database["public"]["Enums"]["allocation_method"]
             | null
@@ -434,7 +746,9 @@ export type Database = {
           collection_postcode: string
           collection_window_end?: string | null
           collection_window_start?: string | null
+          cover_tier?: Database["public"]["Enums"]["cover_tier"]
           created_at?: string
+          crew_size?: number | null
           customer_id: string
           customer_price?: number | null
           delivery_address?: string | null
@@ -443,16 +757,23 @@ export type Database = {
           delivery_window_start?: string | null
           distance_miles?: number | null
           estimated_duration_minutes?: number | null
+          extended_cover_declared_value?: number | null
+          extended_cover_notes?: string | null
+          helper_included?: boolean
           id?: string
           listed_at?: string
           matching_status?: Database["public"]["Enums"]["matching_status"]
           payout_amount?: number | null
+          price_breakdown?: Json | null
+          quote_id?: string | null
           status?: Database["public"]["Enums"]["job_status"] | null
           title: string
+          total_volume_m3?: number | null
           updated_at?: string
           work_type: Database["public"]["Enums"]["work_type"]
         }
         Update: {
+          access_notes?: string | null
           allocation_method?:
             | Database["public"]["Enums"]["allocation_method"]
             | null
@@ -462,7 +783,9 @@ export type Database = {
           collection_postcode?: string
           collection_window_end?: string | null
           collection_window_start?: string | null
+          cover_tier?: Database["public"]["Enums"]["cover_tier"]
           created_at?: string
+          crew_size?: number | null
           customer_id?: string
           customer_price?: number | null
           delivery_address?: string | null
@@ -471,12 +794,18 @@ export type Database = {
           delivery_window_start?: string | null
           distance_miles?: number | null
           estimated_duration_minutes?: number | null
+          extended_cover_declared_value?: number | null
+          extended_cover_notes?: string | null
+          helper_included?: boolean
           id?: string
           listed_at?: string
           matching_status?: Database["public"]["Enums"]["matching_status"]
           payout_amount?: number | null
+          price_breakdown?: Json | null
+          quote_id?: string | null
           status?: Database["public"]["Enums"]["job_status"] | null
           title?: string
+          total_volume_m3?: number | null
           updated_at?: string
           work_type?: Database["public"]["Enums"]["work_type"]
         }
@@ -486,6 +815,90 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_templates: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          name: string
+          transport_partner_id: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          name: string
+          transport_partner_id: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          name?: string
+          transport_partner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_templates_transport_partner_id_fkey"
+            columns: ["transport_partner_id"]
+            isOneToOne: false
+            referencedRelation: "transport_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          job_id: string
+          read_at: string | null
+          sender_profile_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          job_id: string
+          read_at?: string | null
+          sender_profile_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+          read_at?: string | null
+          sender_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -531,6 +944,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      partner_notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read_at: string | null
+          title: string
+          transport_partner_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          title: string
+          transport_partner_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          title?: string
+          transport_partner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_notifications_transport_partner_id_fkey"
+            columns: ["transport_partner_id"]
+            isOneToOne: false
+            referencedRelation: "transport_partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -839,6 +1287,66 @@ export type Database = {
           },
         ]
       }
+      quote_items: {
+        Row: {
+          catalogue_item_id: string | null
+          created_at: string
+          custom_name: string | null
+          height_cm: number | null
+          id: string
+          length_cm: number | null
+          quantity: number
+          quote_id: string
+          updated_at: string
+          volume_m3: number
+          weight_kg: number | null
+          width_cm: number | null
+        }
+        Insert: {
+          catalogue_item_id?: string | null
+          created_at?: string
+          custom_name?: string | null
+          height_cm?: number | null
+          id?: string
+          length_cm?: number | null
+          quantity?: number
+          quote_id: string
+          updated_at?: string
+          volume_m3?: number
+          weight_kg?: number | null
+          width_cm?: number | null
+        }
+        Update: {
+          catalogue_item_id?: string | null
+          created_at?: string
+          custom_name?: string | null
+          height_cm?: number | null
+          id?: string
+          length_cm?: number | null
+          quantity?: number
+          quote_id?: string
+          updated_at?: string
+          volume_m3?: number
+          weight_kg?: number | null
+          width_cm?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_catalogue_item_id_fkey"
+            columns: ["catalogue_item_id"]
+            isOneToOne: false
+            referencedRelation: "item_catalogue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_requests: {
         Row: {
           collection_postcode: string
@@ -884,33 +1392,205 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_stops: {
+        Row: {
+          address_line: string | null
+          address_text: string | null
+          created_at: string
+          floor: Database["public"]["Enums"]["floor_level"]
+          has_lift: boolean
+          id: string
+          lat: number | null
+          lng: number | null
+          outcode: string | null
+          postcode: string | null
+          quote_id: string
+          sequence: number
+          updated_at: string
+        }
+        Insert: {
+          address_line?: string | null
+          address_text?: string | null
+          created_at?: string
+          floor?: Database["public"]["Enums"]["floor_level"]
+          has_lift?: boolean
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          outcode?: string | null
+          postcode?: string | null
+          quote_id: string
+          sequence: number
+          updated_at?: string
+        }
+        Update: {
+          address_line?: string | null
+          address_text?: string | null
+          created_at?: string
+          floor?: Database["public"]["Enums"]["floor_level"]
+          has_lift?: boolean
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          outcode?: string | null
+          postcode?: string | null
+          quote_id?: string
+          sequence?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_stops_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          access_notes: string | null
+          category_hint: string | null
+          collection_window_end: string | null
+          collection_window_start: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          cover_tier: Database["public"]["Enums"]["cover_tier"]
+          created_at: string
+          crew_size: number | null
+          customer_id: string | null
+          delivery_window_end: string | null
+          delivery_window_start: string | null
+          distance_miles: number | null
+          duration_minutes: number | null
+          email: string | null
+          expires_at: string
+          extended_cover_declared_value: number | null
+          extended_cover_notes: string | null
+          helper_included: boolean
+          id: string
+          marketing_opt_in: boolean
+          price_breakdown: Json | null
+          reference: string
+          selected_date: string | null
+          status: Database["public"]["Enums"]["quote_status"]
+          terms_accepted_at: string | null
+          total_price: number | null
+          total_volume_m3: number | null
+          updated_at: string
+        }
+        Insert: {
+          access_notes?: string | null
+          category_hint?: string | null
+          collection_window_end?: string | null
+          collection_window_start?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          cover_tier?: Database["public"]["Enums"]["cover_tier"]
+          created_at?: string
+          crew_size?: number | null
+          customer_id?: string | null
+          delivery_window_end?: string | null
+          delivery_window_start?: string | null
+          distance_miles?: number | null
+          duration_minutes?: number | null
+          email?: string | null
+          expires_at?: string
+          extended_cover_declared_value?: number | null
+          extended_cover_notes?: string | null
+          helper_included?: boolean
+          id?: string
+          marketing_opt_in?: boolean
+          price_breakdown?: Json | null
+          reference?: string
+          selected_date?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          terms_accepted_at?: string | null
+          total_price?: number | null
+          total_volume_m3?: number | null
+          updated_at?: string
+        }
+        Update: {
+          access_notes?: string | null
+          category_hint?: string | null
+          collection_window_end?: string | null
+          collection_window_start?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          cover_tier?: Database["public"]["Enums"]["cover_tier"]
+          created_at?: string
+          crew_size?: number | null
+          customer_id?: string | null
+          delivery_window_end?: string | null
+          delivery_window_start?: string | null
+          distance_miles?: number | null
+          duration_minutes?: number | null
+          email?: string | null
+          expires_at?: string
+          extended_cover_declared_value?: number | null
+          extended_cover_notes?: string | null
+          helper_included?: boolean
+          id?: string
+          marketing_opt_in?: boolean
+          price_breakdown?: Json | null
+          reference?: string
+          selected_date?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          terms_accepted_at?: string | null
+          total_price?: number | null
+          total_volume_m3?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ratings: {
         Row: {
+          care_of_goods_rating: number | null
           comment: string | null
+          communication_rating: number | null
           created_at: string
           customer_id: string
           id: string
           job_id: string
+          presentation_rating: number | null
+          punctuality_rating: number | null
           rating: number
           transport_partner_id: string
           updated_at: string
         }
         Insert: {
+          care_of_goods_rating?: number | null
           comment?: string | null
+          communication_rating?: number | null
           created_at?: string
           customer_id: string
           id?: string
           job_id: string
+          presentation_rating?: number | null
+          punctuality_rating?: number | null
           rating: number
           transport_partner_id: string
           updated_at?: string
         }
         Update: {
+          care_of_goods_rating?: number | null
           comment?: string | null
+          communication_rating?: number | null
           created_at?: string
           customer_id?: string
           id?: string
           job_id?: string
+          presentation_rating?: number | null
+          punctuality_rating?: number | null
           rating?: number
           transport_partner_id?: string
           updated_at?: string
@@ -932,6 +1612,45 @@ export type Database = {
           },
           {
             foreignKeyName: "ratings_transport_partner_id_fkey"
+            columns: ["transport_partner_id"]
+            isOneToOne: false
+            referencedRelation: "transport_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reservation_compensations: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          reservation_id: string
+          transport_partner_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          reservation_id: string
+          transport_partner_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          reservation_id?: string
+          transport_partner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservation_compensations_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: true
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_compensations_transport_partner_id_fkey"
             columns: ["transport_partner_id"]
             isOneToOne: false
             referencedRelation: "transport_partners"
@@ -1179,16 +1898,66 @@ export type Database = {
           },
         ]
       }
+      transport_partner_payment_details: {
+        Row: {
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_sort_code: string | null
+          created_at: string
+          id: string
+          payment_methods_accepted: string[]
+          transport_partner_id: string
+          updated_at: string
+          vat_number: string | null
+        }
+        Insert: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_sort_code?: string | null
+          created_at?: string
+          id?: string
+          payment_methods_accepted?: string[]
+          transport_partner_id: string
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Update: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_sort_code?: string | null
+          created_at?: string
+          id?: string
+          payment_methods_accepted?: string[]
+          transport_partner_id?: string
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_partner_payment_details_transport_partner_id_fkey"
+            columns: ["transport_partner_id"]
+            isOneToOne: true
+            referencedRelation: "transport_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transport_partners: {
         Row: {
           allow_bid_invitations: boolean
           business_description: string | null
           business_name: string
+          category_preferences: string[]
+          cmr_cover_amount: number | null
           cmr_insurance_doc_url: string | null
           company_type: string | null
           created_at: string
+          goods_in_transit_cover_amount: number | null
           goods_in_transit_insurance_doc_url: string | null
+          guidelines_accepted_at: string | null
           id: string
+          notify_email: boolean
+          notify_sms: boolean
           profile_id: string
           profile_photo_url: string | null
           published: boolean
@@ -1199,11 +1968,17 @@ export type Database = {
           allow_bid_invitations?: boolean
           business_description?: string | null
           business_name: string
+          category_preferences?: string[]
+          cmr_cover_amount?: number | null
           cmr_insurance_doc_url?: string | null
           company_type?: string | null
           created_at?: string
+          goods_in_transit_cover_amount?: number | null
           goods_in_transit_insurance_doc_url?: string | null
+          guidelines_accepted_at?: string | null
           id?: string
+          notify_email?: boolean
+          notify_sms?: boolean
           profile_id: string
           profile_photo_url?: string | null
           published?: boolean
@@ -1214,11 +1989,17 @@ export type Database = {
           allow_bid_invitations?: boolean
           business_description?: string | null
           business_name?: string
+          category_preferences?: string[]
+          cmr_cover_amount?: number | null
           cmr_insurance_doc_url?: string | null
           company_type?: string | null
           created_at?: string
+          goods_in_transit_cover_amount?: number | null
           goods_in_transit_insurance_doc_url?: string | null
+          guidelines_accepted_at?: string | null
           id?: string
+          notify_email?: boolean
+          notify_sms?: boolean
           profile_id?: string
           profile_photo_url?: string | null
           published?: boolean
@@ -1380,11 +2161,43 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_assign_job: {
+        Args: {
+          p_job_id: string
+          p_transport_partner_id: string
+          p_vehicle_id: string
+        }
+        Returns: Json
+      }
+      alert_matches: {
+        Args: never
+        Returns: {
+          allocation_method: Database["public"]["Enums"]["allocation_method"]
+          bid_count: number
+          bidding_closes_at: string
+          category: string
+          collection_area: string
+          collection_window_end: string
+          collection_window_start: string
+          customer_price: number
+          delivery_area: string
+          distance_miles: number
+          job_id: string
+          listed_at: string
+          matched_search_name: string
+        }[]
+      }
       claim_job: {
         Args: { p_job_id: string; p_vehicle_id: string }
         Returns: Json
       }
       close_expired_auctions: { Args: never; Returns: undefined }
+      expire_job_invitations: { Args: never; Returns: undefined }
+      expire_unfilled_reservations: { Args: never; Returns: undefined }
+      express_interest: {
+        Args: { p_job_id: string; p_note?: string; p_vehicle_id: string }
+        Returns: Json
+      }
       find_auction_jobs: {
         Args: never
         Returns: {
@@ -1401,13 +2214,14 @@ export type Database = {
           distance_miles: number
           id: string
           listed_at: string
+          lowest_bid_amount: number
           my_bid_amount: number
           my_bid_status: Database["public"]["Enums"]["bid_status"]
           my_bid_vehicle_id: string
         }[]
       }
-      find_work_jobs: {
-        Args: { p_job_id?: string }
+      find_express_interest_jobs: {
+        Args: never
         Returns: {
           category: string
           collection_area: string
@@ -1415,6 +2229,25 @@ export type Database = {
           collection_window_start: string
           customer_price: number
           delivery_area: string
+          distance_miles: number
+          id: string
+          interest_count: number
+          listed_at: string
+          my_interest_status: string
+          payout_amount: number
+        }[]
+      }
+      find_work_jobs: {
+        Args: { p_job_id?: string }
+        Returns: {
+          category: string
+          collection_area: string
+          collection_outward: string
+          collection_window_end: string
+          collection_window_start: string
+          customer_price: number
+          delivery_area: string
+          delivery_outward: string
           delivery_window_end: string
           delivery_window_start: string
           distance_miles: number
@@ -1423,7 +2256,19 @@ export type Database = {
           payout_amount: number
         }[]
       }
+      generate_quote_reference: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      job_interested_partners: {
+        Args: { p_job_id: string }
+        Returns: {
+          business_name: string
+          interest_id: string
+          note: string
+          submitted_at: string
+        }[]
+      }
+      mark_messages_read: { Args: { p_job_id: string }; Returns: undefined }
+      mark_notifications_read: { Args: never; Returns: undefined }
       my_bids: {
         Args: never
         Returns: {
@@ -1438,6 +2283,120 @@ export type Database = {
           submitted_at: string
         }[]
       }
+      my_job_invitations: {
+        Args: never
+        Returns: {
+          category: string
+          collection_area: string
+          collection_window_end: string
+          collection_window_start: string
+          created_at: string
+          customer_price: number
+          delivery_area: string
+          distance_miles: number
+          expires_at: string
+          invitation_id: string
+          job_id: string
+          payout_amount: number
+          status: Database["public"]["Enums"]["invitation_status"]
+          via_reservation: boolean
+        }[]
+      }
+      my_message_threads: {
+        Args: never
+        Returns: {
+          category: string
+          counterpart_name: string
+          job_id: string
+          job_title: string
+          last_message_at: string
+          last_message_body: string
+          unread_count: number
+        }[]
+      }
+      my_performance_summary: {
+        Args: never
+        Returns: {
+          active_performance_plan: boolean
+          average_rating: number
+          booster_eligible: boolean
+          deallocation_count: number
+          deallocation_total_amount: number
+          express_pay_eligible: boolean
+          job_access_blocked: boolean
+          job_access_probation: boolean
+          jobs_last_30_days: number
+          jobs_until_full_access: number
+          member_since: string
+          rating_count: number
+          total_jobs: number
+        }[]
+      }
+      my_route_recommendations: {
+        Args: never
+        Returns: {
+          allocation_method: Database["public"]["Enums"]["allocation_method"]
+          category: string
+          collection_area: string
+          collection_window_end: string
+          collection_window_start: string
+          customer_price: number
+          delivery_area: string
+          distance_miles: number
+          job_id: string
+          recommendation_id: string
+          route_id: string
+          sent_at: string
+          status: Database["public"]["Enums"]["job_recommendation_status"]
+        }[]
+      }
+      my_watchlist: {
+        Args: never
+        Returns: {
+          allocation_method: Database["public"]["Enums"]["allocation_method"]
+          bid_count: number
+          bidding_closes_at: string
+          category: string
+          collection_area: string
+          collection_window_end: string
+          collection_window_start: string
+          created_at: string
+          customer_price: number
+          delivery_area: string
+          distance_miles: number
+          job_id: string
+          matching_status: Database["public"]["Enums"]["matching_status"]
+          watchlist_id: string
+        }[]
+      }
+      partner_reviews: {
+        Args: never
+        Returns: {
+          care_of_goods_rating: number
+          category: string
+          comment: string
+          communication_rating: number
+          created_at: string
+          customer_name: string
+          job_id: string
+          overall_rating: number
+          presentation_rating: number
+          punctuality_rating: number
+          rating_id: string
+        }[]
+      }
+      respond_to_job_invitation: {
+        Args: {
+          p_accept: boolean
+          p_invitation_id: string
+          p_vehicle_id?: string
+        }
+        Returns: Json
+      }
+      select_interested_partner: {
+        Args: { p_interest_id: string; p_job_id: string }
+        Returns: Json
+      }
       submit_bid: {
         Args: { p_amount: number; p_job_id: string; p_vehicle_id: string }
         Returns: Json
@@ -1451,10 +2410,36 @@ export type Database = {
         | "reservation"
         | "route_matcher"
       bid_status: "pending" | "won" | "lost" | "expired"
+      cover_tier: "standard" | "extended_requested"
+      customer_payment_status:
+        | "unpaid"
+        | "pending"
+        | "succeeded"
+        | "failed"
+        | "refunded"
       dispute_status: "none" | "submitted" | "resolved"
       driver_status: "active" | "inactive"
+      floor_level:
+        | "basement"
+        | "ground"
+        | "first"
+        | "second"
+        | "third"
+        | "fourth"
+        | "fifth"
+        | "sixth"
+        | "above_sixth"
       fuel_type: "diesel" | "petrol" | "electric" | "hybrid"
       invitation_status: "pending" | "accepted" | "declined" | "expired"
+      item_category:
+        | "sofas"
+        | "wardrobes"
+        | "boxes_bags"
+        | "beds_mattresses"
+        | "tables"
+        | "televisions"
+        | "appliances"
+        | "chairs"
       job_recommendation_status: "sent" | "accepted" | "declined"
       job_status:
         | "assigned"
@@ -1471,6 +2456,7 @@ export type Database = {
       payment_status: "scheduled" | "pending" | "transferred"
       photo_stage: "collection" | "delivery"
       pmp_status: "active" | "resolved" | "terminated"
+      quote_status: "in_progress" | "converted" | "abandoned"
       reservation_status:
         | "pending"
         | "accepted"
@@ -1624,10 +2610,39 @@ export const Constants = {
         "route_matcher",
       ],
       bid_status: ["pending", "won", "lost", "expired"],
+      cover_tier: ["standard", "extended_requested"],
+      customer_payment_status: [
+        "unpaid",
+        "pending",
+        "succeeded",
+        "failed",
+        "refunded",
+      ],
       dispute_status: ["none", "submitted", "resolved"],
       driver_status: ["active", "inactive"],
+      floor_level: [
+        "basement",
+        "ground",
+        "first",
+        "second",
+        "third",
+        "fourth",
+        "fifth",
+        "sixth",
+        "above_sixth",
+      ],
       fuel_type: ["diesel", "petrol", "electric", "hybrid"],
       invitation_status: ["pending", "accepted", "declined", "expired"],
+      item_category: [
+        "sofas",
+        "wardrobes",
+        "boxes_bags",
+        "beds_mattresses",
+        "tables",
+        "televisions",
+        "appliances",
+        "chairs",
+      ],
       job_recommendation_status: ["sent", "accepted", "declined"],
       job_status: [
         "assigned",
@@ -1645,6 +2660,7 @@ export const Constants = {
       payment_status: ["scheduled", "pending", "transferred"],
       photo_stage: ["collection", "delivery"],
       pmp_status: ["active", "resolved", "terminated"],
+      quote_status: ["in_progress", "converted", "abandoned"],
       reservation_status: [
         "pending",
         "accepted",

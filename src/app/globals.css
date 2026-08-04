@@ -24,3 +24,39 @@ body {
     text-wrap: balance;
   }
 }
+
+/* Dual-handle range slider (quote step 3 time windows).
+   Two native range inputs are overlaid on a shared track: the inputs
+   themselves must not intercept pointer events, only their thumbs, or the
+   upper input would swallow every click meant for the lower one. Thumb
+   pseudo-elements can't be expressed in Tailwind, hence plain CSS here. */
+.range-thumb {
+  pointer-events: none;
+}
+
+.range-thumb::-webkit-slider-thumb {
+  pointer-events: auto;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 3px solid #5b3df6;
+  box-shadow: 0 1px 3px rgb(15 16 36 / 0.25);
+  cursor: pointer;
+}
+
+.range-thumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 3px solid #5b3df6;
+  box-shadow: 0 1px 3px rgb(15 16 36 / 0.25);
+  cursor: pointer;
+}
+
+.range-thumb::-moz-range-track {
+  background: transparent;
+}
