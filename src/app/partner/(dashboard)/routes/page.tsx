@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { PlusIcon, MapPinIcon } from "@/components/icons";
+import { PlusIcon, MapPinIcon, RouteIcon } from "@/components/icons";
+import { SERVICE_CATEGORIES } from "@/components/home/ServicesGrid";
 
 export const metadata: Metadata = { title: "Routes" };
 
@@ -30,6 +31,12 @@ export default async function PartnerRoutesPage() {
     .select("id, date, start_postcode, end_postcode, direction, team_size")
     .eq("transport_partner_id", partner!.id)
     .order("date", { ascending: true });
+
+  // my_route_recommendations() is a SECURITY DEFINER RPC (migration 0042) —
+  // a recommended job may still be 'listed' and unassigned, so jobs_select
+  // won't return it directly (same reasoning as find_work_jobs). Purely a
+  // discovery aid: winning the job still goes through Find Work/Bidding.
+  const { data: recommendations } = await supabase.rpc("my_route_recommendations");
 
   return (
     <div>
@@ -76,6 +83,46 @@ export default async function PartnerRoutesPage() {
               </div>
             </Link>
           ))}
+        </div>
+      )}
+
+      <h2 className="mt-10 font-heading text-lg font-bold text-ink-900">Recommended for your routes</h2>
+      <p className="mt-1 text-sm text-ink-700">
+        Listed jobs that fall along a route you&apos;ve saved. Claiming or bidding still happens
+        in Find Work or Bidding — this is just a heads-up.
+      </p>
+      {!recommendations?.length ? (
+        <p className="mt-4 text-sm text-ink-700">No matches yet — add a route to start getting recommendations.</p>
+      ) : (
+        <div className="mt-4 flex flex-col gap-3">
+          {recommendations.map((rec) => {
+            const category = SERVICE_CATEGORIES.find((s) => s.slug === rec.category);
+            const href = rec.allocation_method === "auction" ? "/partner/work/bidding" : "/partner/work/find";
+            return (
+              <Link
+                key={rec.recommendation_id}
+                href={href}
+                className="flex items-center gap-3 rounded-2xl border border-brand-100 bg-white p-5 hover:border-brand-300"
+              >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-mint-50 text-mint-600">
+                  <RouteIcon className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-heading text-sm font-bold text-ink-900">
+                    {category?.title ?? rec.category ?? "Move"}
+                  </p>
+                  <p className="text-sm text-ink-700">
+                    {rec.collection_area || "?"} → {rec.delivery_area || "?"}
+                  </p>
+                </div>
+                {rec.customer_price != null && (
+                  <p className="font-heading text-sm font-extrabold text-ink-900">
+                    £{Number(rec.customer_price).toFixed(2)}
+                  </p>
+                )}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
