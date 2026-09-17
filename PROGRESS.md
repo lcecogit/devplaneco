@@ -1726,3 +1726,42 @@ must follow.
   M10 GDPR export/erasure and 2FA. `crm/src/lib/db-types.ts` is hand-written and
   should be replaced by generated Supabase types once a project exists. No
   Supabase project has been created — that incurs cost and was not authorised.
+
+### 2026-09-17 — CRM Phase 1: intake, scheduler, booking, GDPR — and closing out
+- Built: provider adapters with working stubs (payments, email, SMS, WhatsApp,
+  PDF, geo) behind interfaces, so nothing in the domain imports a vendor SDK
+  and no flow blocks on procurement. `/api/intake/lead` — HMAC-signed with a
+  replay window, idempotent, storing the raw body before validation.
+  `/api/cron/tick` plus `vercel.json` — the single 5-minute scheduler that
+  advances sequence enrolments into the outbox and dispatches it. Migrations
+  0017–0019: `create_intake_lead`, `book_accepted_quote`,
+  `claim_due_enrolments`, `claim_due_outbox`, `mark_outbox_sent`,
+  `enrol_in_sequence`, `generate_job_sheet`, `export_customer_data`,
+  `erase_customer_data`. `crm/README.md` with the commands that prove each
+  claim.
+- Key decisions: (1) Lead creation and booking are Postgres functions, not
+  sequential PostgREST calls — a request dying halfway would otherwise leave a
+  customer with no lead, or a job with no invoice. (2) Stop conditions are
+  derived at dispatch time inside `claim_due_enrolments` from live state, never
+  from a flag written at enrolment, so a customer who books an hour before the
+  chase is due does not receive it. (3) The fair-use cap counts across all six
+  brands: a customer experiences one sender, not six. (4) Erasure anonymises
+  rather than deletes where financial records must survive the statutory
+  period, and deletes behavioural data outright. (5) The job sheet is a frozen
+  snapshot carrying access notes verbatim and payment status but never a price.
+- Verified: typecheck, lint and build clean; **81 unit tests**; **88 SQL
+  assertions** across 19 migrations applied to a throwaway Postgres 16. New
+  coverage includes signature tampering, replay and length-mismatch handling,
+  adapter contracts, intake customer reuse, booking atomicity, concurrent
+  outbox claiming, cross-brand unsubscribe, job-sheet contents and GDPR
+  erasure.
+- One bug found and fixed: `book_accepted_quote` accepted `accepted` as an
+  input status so a retry would be safe, but nothing stopped a second job and a
+  second invoice being raised for the same quote. Now guarded and tested.
+- Deliberately stopped here, at the user's instruction not to incur cost. No
+  Supabase project was created, no paid provider was signed up for, and the
+  remaining work is UI that cannot be meaningfully verified without a live
+  project: the visual inventory builder, the quote PDF and send flow, the
+  Stripe webhook route, the dispatch calendar, the embeddable widget, the lead
+  detail screen, the retention purge job and 2FA enforcement. `SPEC.md` §15
+  now records the true status of every milestone rather than a plan.

@@ -618,19 +618,25 @@ implementations pass.
 
 Each milestone is a working, deployed, reviewable increment. Do not batch.
 
-| M | Deliverable | Acceptance criteria |
+Status below is what has actually been verified, not what has been attempted.
+Every "done" claim is backed by a command in `crm/README.md` that anyone can
+re-run. Where a milestone is partly done, the split is always the same shape:
+the logic and its database guarantees exist and are tested, and the screen that
+would let a person reach them does not.
+
+| M | Deliverable | Status at 17 Sep 2026 |
 |---|---|---|
-| **M0** | `crm/` app scaffolded, Supabase project, design tokens from `DESIGN.md`, auth, staff invite, brand switcher, empty shells for all four portals | Deploys to Vercel. Login works. `npx tsc --noEmit` clean. Lighthouse a11y 100 on the login page. Design tokens are the single source of colour, type, spacing — zero hardcoded hex outside the token file. |
-| **M1** | Schema + RLS for tenancy, people, pipeline. Audit log. | Every table denies by default. A test proves a `sales` user in brand A cannot read brand B, and that `crew` cannot read prices. |
-| **M2** | Lead intake API, widget, duplicate + cross-brand detection, routing, acknowledgement | A signed POST from a brand site creates a routed lead with an acknowledgement sent, at any hour. A duplicate submission creates no second pipeline entry. Malformed payloads are stored, not dropped. |
-| **M3** | Lead workspace: list, detail, stage transitions, notes, timeline, ownership, lost reasons | A salesperson can run a lead from `new` to `lost` without touching the database. Illegal transitions are rejected by the domain layer with a readable error. |
-| **M4** | Item catalogue, inventory builder, pricing engine, golden tests | Golden tests pass for every service category. A specialist item routes to manual pricing instead of auto-quoting. Breakdown explains every line. |
-| **M5** | Quote versioning, PDF, send, view tracking, portal link | A sent quote is immutable — a test proves the trigger rejects the update. The PDF is byte-identical on re-render. Viewing sets `first_viewed_at`. |
-| **M6** | Payment links, bank transfer, webhook, booking transaction, invoice | Booking is atomic under induced failure. Webhook replay is idempotent. Stub provider completes the whole flow with no Stripe keys. |
-| **M7** | Outbox, sequences, cron tick, 48-hour chase, quiet hours, frequency cap, unsubscribe | Concurrent ticks send exactly once. A booked customer stops receiving chases immediately. An unsubscribe propagates across all six brands. |
-| **M8** | Dispatch slice: calendar, assignment, job sheet, completion, attendance | The exclusion constraint rejects a double-booking at the database level. Access notes appear verbatim on the job sheet. |
-| **M9** | Dashboards, sales tracker, provider performance, attribution | Every KPI drills through to its rows. Charts pass the `DESIGN.md` §7 checklist. |
-| **M10** | GDPR export/erasure, retention job, 2FA enforcement, security review, full design audit | `/security-review` clean. The `DESIGN.md` §9 audit gate passes on every screen. |
+| **M0** | `crm/` app scaffolded, design tokens, auth, staff shell | **Done.** Builds, lints, typechecks. Tokens are the only source of colour, type, space and motion. Login and the unauthenticated redirect verified against the running server. |
+| **M1** | Schema + RLS for tenancy, people, pipeline. Audit log. | **Done.** 19 migrations apply to a throwaway Postgres; 88 assertions cover brand isolation both ways, crew price exclusion, privilege escalation and audit-log immutability. |
+| **M2** | Lead intake API, widget, duplicate + cross-brand detection, routing, acknowledgement | **Partly done.** `/api/intake/lead` is built and the signature, payload, dedupe, routing and scoring logic is tested; `create_intake_lead` is transactional and tested. **Not done:** the embeddable widget, the partial-submission endpoint. |
+| **M3** | Lead workspace: list, detail, stage transitions, notes, timeline | **Partly done.** The list view and the transition state machine exist and are tested. **Not done:** the lead detail screen, so transitions are not yet reachable from the UI. |
+| **M4** | Item catalogue, inventory builder, pricing engine, golden tests | **Partly done.** Catalogue, volume and the pricing engine are complete with golden tests; a specialist item routes to manual pricing. **Not done:** the visual room-and-item builder UI. |
+| **M5** | Quote versioning, PDF, send, view tracking, portal link | **Partly done.** Immutability is enforced by trigger and tested. **Not done:** PDF rendering, sending, view tracking, the portal link. |
+| **M6** | Payment links, bank transfer, webhook, booking transaction, invoice | **Partly done.** `book_accepted_quote` is atomic, refuses to book a quote twice, and is tested; the payment adapter and its stub exist. **Not done:** the Stripe webhook route and the bank-transfer reconciliation screen. |
+| **M7** | Outbox, sequences, cron tick, 48-hour chase, quiet hours, frequency cap, unsubscribe | **Done.** The scheduler is pure and tested; the cron tick, claim functions and dispatcher are built; concurrent ticks provably claim disjoint work; a cross-brand unsubscribe is honoured. |
+| **M8** | Dispatch slice: calendar, assignment, job sheet, completion, attendance | **Partly done.** Double-booking is rejected by a database constraint and the job sheet carries access notes verbatim, both tested. **Not done:** the calendar and assignment UI. |
+| **M9** | Dashboards, sales tracker, provider performance, attribution | **Partly done.** Four drill-through KPI tiles and the attention queue. **Not done:** sales tracker, provider performance, attribution reporting. |
+| **M10** | GDPR export/erasure, retention job, 2FA, security review, design audit | **Partly done.** Export and erasure are implemented and tested — erasure anonymises and keeps the invoice. **Not done:** the retention purge job, 2FA enforcement, a full security review. |
 
 ---
 
