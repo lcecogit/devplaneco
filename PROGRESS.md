@@ -1635,3 +1635,39 @@ must follow.
   quoted rate once agreed. No rate card exists because the business's own
   T&Cs don't have one — this needs a real decision from the business, not
   a guessed number.
+
+### 2026-09-17 — Unified CRM platform: specification (SPEC.md, DESIGN.md, ROADMAP.md)
+- Built: no application code. Three planning documents at the repo root —
+  `SPEC.md` (a Phase 1 build prompt for Claude Code: architecture, schema,
+  RLS, pricing engine, sequence engine, milestones M0–M10 with acceptance
+  criteria), `DESIGN.md` (design system and a craft audit gate), and
+  `ROADMAP.md` (phases 2–6, with vendor and compliance items separated from
+  development items).
+- Key decisions: (1) The CRM is a **new app at `crm/`** with its own Supabase
+  project, not an extension of the movers-now marketplace — the marketplace is
+  a two-sided partner/auction product and its `jobs`/`quotes` model directly
+  conflicts with an in-house operations model; 56 migrations of working code
+  were not worth destabilising. (2) Hosting moves to **Vercel** per
+  instruction; note `netlify.toml` and `claude.md.md` still describe Netlify
+  for the existing app — migrating that app is a separate task, not done here.
+  (3) The six brand WordPress sites stay live; the platform integrates via a
+  signed lead-intake API plus an embeddable quote widget, rather than
+  rebuilding six ranking sites. (4) Scope cut hard to lead → quote → book →
+  pay → chase → review plus a thin dispatch slice; everything else phased in
+  `ROADMAP.md`. (5) Typeface is **Geist Sans/Mono** — SF Pro cannot be licensed
+  as a webfont for a commercial web app, and `-apple-system` would fragment the
+  product across Windows and Android. (6) Chart palette is fixed and
+  deliberately *not* brand-themed; the eight-slot order in `DESIGN.md` §7 was
+  validated (worst adjacent CVD ΔE 9.1 light / 8.4 dark, normal-vision 19.6),
+  not chosen by eye.
+- Blocked on business input: real brand hex values, logos and sender domains
+  for all six brands; the actual rate card (base rates, mileage, volume bands,
+  crew rates, surcharges, VAT treatment); whether Stripe / email provider /
+  WhatsApp Business API credentials exist; data retention periods per record
+  class. `SPEC.md` §1 requires these to be marked `VALUE REQUIRED FROM
+  BUSINESS` rather than guessed.
+- Deferred / not done yet: nothing under `crm/` exists — M0 has not started.
+  Several items from the brief are deliberately refused or reclassified in
+  `ROADMAP.md` rather than scheduled (facial-recognition clock-in, in-house
+  PAYE/NI calculation, tachograph integration, customs declarations, 3D room
+  visualiser); each carries its reasoning there.
