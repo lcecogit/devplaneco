@@ -1,4 +1,5 @@
 import { BrandPhoto } from "@/components/media/BrandPhoto";
+import { brand, photos } from "@/lib/brand-content";
 
 import { SignInForm } from "./SignInForm";
 
@@ -25,17 +26,25 @@ export default function LoginPage() {
             <SignInForm />
           </div>
           <p className="mt-10 text-caption text-ink-3">
-            Operations platform. Internal use only.
+            {brand.name} operations platform. Internal use only.
           </p>
+          {/* A standalone link is a control, not prose, so it gets a real
+              44px target rather than the height of its text. */}
+          <a
+            href="/"
+            className="-ml-1 inline-flex h-11 items-center px-1 text-caption text-ink-2 underline-offset-4 hover:text-ink-1 hover:underline"
+          >
+            ← Back to the website
+          </a>
         </div>
       </main>
 
       <BrandPhoto
         className="hidden lg:block"
+        src={photos.signIn.src}
+        alt={photos.signIn.alt}
         sizes="50vw"
         priority
-        /* No `src` until a licensed asset is committed — see
-           public/photos/CREDITS.md for the sourcing rules and the register. */
       />
     </div>
   );

@@ -77,15 +77,15 @@ const config: Config = {
            They are for customer-facing pages only. Staff screens stay on the
            interface scale below, where 300-weight body at 14px would be too
            fragile to read all day. */
-        hero: ["4.25rem", { lineHeight: "1.2", letterSpacing: "-0.022em", fontWeight: "600" }],
-        "hero-sm": ["1.75rem", { lineHeight: "1.15", letterSpacing: "-0.018em", fontWeight: "600" }],
+        hero: ["4.25rem", { lineHeight: "1.06", letterSpacing: "-0.035em", fontWeight: "300" }],
+        "hero-sm": ["2.25rem", { lineHeight: "1.1", letterSpacing: "-0.03em", fontWeight: "300" }],
         prose: ["1rem", { lineHeight: "1.5", letterSpacing: "0", fontWeight: "300" }],
         "prose-lg": ["1.25rem", { lineHeight: "1.55", letterSpacing: "-0.004em", fontWeight: "300" }],
-        eyebrow: ["0.75rem", { lineHeight: "1.5", letterSpacing: "0.15em", fontWeight: "600" }],
-        display: ["3rem", { lineHeight: "3.25rem", letterSpacing: "-0.032em", fontWeight: "400" }],
-        "title-1": ["2rem", { lineHeight: "2.375rem", letterSpacing: "-0.024em", fontWeight: "500" }],
-        "title-2": ["1.5rem", { lineHeight: "1.875rem", letterSpacing: "-0.018em", fontWeight: "500" }],
-        "title-3": ["1.1875rem", { lineHeight: "1.625rem", letterSpacing: "-0.013em", fontWeight: "500" }],
+        eyebrow: ["0.6875rem", { lineHeight: "1.5", letterSpacing: "0.14em", fontWeight: "500" }],
+        display: ["3rem", { lineHeight: "1.1", letterSpacing: "-0.034em", fontWeight: "300" }],
+        "title-1": ["2rem", { lineHeight: "1.18", letterSpacing: "-0.028em", fontWeight: "400" }],
+        "title-2": ["1.5rem", { lineHeight: "1.25", letterSpacing: "-0.022em", fontWeight: "400" }],
+        "title-3": ["1.0625rem", { lineHeight: "1.4", letterSpacing: "-0.012em", fontWeight: "500" }],
         "body-lg": ["1.0625rem", { lineHeight: "1.625rem", letterSpacing: "-0.006em" }],
         body: ["0.9375rem", { lineHeight: "1.375rem", letterSpacing: "-0.002em" }],
         "body-dense": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0" }],

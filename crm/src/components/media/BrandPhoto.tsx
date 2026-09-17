@@ -39,6 +39,7 @@ export function BrandPhoto({
         fill
         sizes={sizes}
         priority={priority}
+        quality={82}
         className="object-cover"
       />
       {/* A single consistent grade across all six brands, so six sets of

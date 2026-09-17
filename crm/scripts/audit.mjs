@@ -16,7 +16,7 @@ import { chromium } from "playwright";
 import { AxeBuilder } from "@axe-core/playwright";
 
 const BASE = process.env.AUDIT_BASE ?? "http://localhost:3000";
-const PAGES = ["/login", "/styleguide", "/quote"];
+const PAGES = ["/", "/login", "/dashboard", "/leads", "/leads/l1", "/calendar", "/inbox", "/styleguide"];
 const out = process.argv[2];
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });
 let failures = 0;
@@ -25,7 +25,8 @@ for (const scheme of ["light", "dark"]) {
   for (const path of PAGES) {
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: scheme, deviceScaleFactor: 2 });
     const page = await context.newPage();
-    await page.goto(BASE + path, { waitUntil: "networkidle" });
+    await page.goto(BASE + path, { waitUntil: "load" });
+    await page.waitForTimeout(350);
 
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
     const serious = results.violations.filter((v) => ["critical", "serious"].includes(v.impact ?? ""));
@@ -36,7 +37,7 @@ for (const scheme of ["light", "dark"]) {
     const minor = results.violations.filter((v) => !["critical","serious"].includes(v.impact ?? ""));
     for (const v of minor) console.log(`axe-minor ${scheme} ${path} [${v.impact}] ${v.id}`);
 
-    await page.screenshot({ path: `${out}/${path.replace("/", "")}-${scheme}.png`, fullPage: path === "/styleguide" });
+    await page.screenshot({ path: `${out}/${path.replace(/\//g, "") || "home"}-${scheme}.png`, fullPage: path === "/styleguide" });
     await page.close();
     await context.close();
   }
@@ -46,7 +47,8 @@ for (const scheme of ["light", "dark"]) {
 for (const [w, label] of [[320, "320px"], [640, "640px"]]) {
   const page = await browser.newPage({ viewport: { width: w, height: 800 } });
   for (const path of PAGES) {
-    await page.goto(BASE + path, { waitUntil: "networkidle" });
+    await page.goto(BASE + path, { waitUntil: "load" });
+    await page.waitForTimeout(350);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     if (overflow > 0) { failures++; console.log(`OVERFLOW ${label} ${path}: ${overflow}px`); }
   }
@@ -55,7 +57,7 @@ for (const [w, label] of [[320, "320px"], [640, "640px"]]) {
 
 // Keyboard: every interactive element reachable, focus always visible.
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-await page.goto(BASE + "/login", { waitUntil: "networkidle" });
+await page.goto(BASE + "/login", { waitUntil: "load" });
 const order = [];
 for (let i = 0; i < 8; i++) {
   await page.keyboard.press("Tab");

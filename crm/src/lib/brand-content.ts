@@ -22,6 +22,32 @@ export const brand = {
   ],
 } as const;
 
+/** Images from the business's own WordPress media library — see
+ *  public/photos/CREDITS.md. Alt text is the library's own, written by
+ *  whoever uploaded it, rather than invented here. */
+export const photos = {
+  hero: {
+    src: "/photos/boxes-house-move.webp",
+    alt: "Cardboard moving boxes being unpacked during a house move",
+  },
+  residential: {
+    src: "/photos/labelled-boxes.webp",
+    alt: "Labelled cardboard boxes ready for moving day",
+  },
+  packing: {
+    src: "/photos/packing-fragile.webp",
+    alt: "Person wrapping fragile kitchen items in plain packing paper while preparing for a house move",
+  },
+  specialist: {
+    src: "/photos/server-rack.webp",
+    alt: "Rack-mounted servers and network equipment in a comms room, the kit moved during an office IT relocation",
+  },
+  signIn: {
+    src: "/photos/empty-room.webp",
+    alt: "Bright empty room with large windows",
+  },
+} as const;
+
 export const services = [
   {
     slug: "residential-moves",

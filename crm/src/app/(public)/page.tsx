@@ -1,9 +1,9 @@
 import { BrandPhoto } from "@/components/media/BrandPhoto";
-import { brand, caseStudies, reasons, services, testimonials } from "@/lib/brand-content";
+import { brand, caseStudies, photos, reasons, services, testimonials } from "@/lib/brand-content";
 
 import { QuoteForm } from "./QuoteForm";
 
-export const metadata = { title: `${brand.name} — get a fixed price` };
+export const metadata = { title: brand.name };
 
 /** The customer-facing quote funnel.
  *
@@ -64,7 +64,13 @@ export default function QuotePage() {
               worth keeping literally: it answers "can you actually do my move"
               before the visitor has scrolled. */}
           <div className="relative">
-            <BrandPhoto className="aspect-[4/3] w-full rounded-lg" />
+            <BrandPhoto
+              className="aspect-[4/3] w-full"
+              src={photos.hero.src}
+              alt={photos.hero.alt}
+              sizes="(max-width: 1024px) 100vw, 46vw"
+              priority
+            />
             <div className="mt-4 border border-hairline bg-surface-raised p-5 lg:absolute lg:-bottom-8 lg:left-6 lg:mt-0 lg:w-[22rem] lg:shadow-2">
               <p className="text-eyebrow uppercase text-ink-3">Speak to your nearest branch</p>
               <ul className="mt-3 flex flex-col gap-2">
@@ -89,13 +95,27 @@ export default function QuotePage() {
       {/* ── Services ─────────────────────────────────────────────────────── */}
       <Section id="services" eyebrow="Our services" title="Moves we take on" lead="Four services, each with its own crew, kit and method — not one team doing everything.">
         <div className="grid gap-px border border-hairline bg-hairline sm:grid-cols-2">
-          {services.map((service) => (
-            <article key={service.slug} className="flex flex-col gap-3 bg-surface-canvas p-7">
-              <p className="text-eyebrow uppercase text-ink-3">{service.tag}</p>
-              <h3 className="text-title-2 text-ink-1">{service.name}</h3>
-              <p className="text-prose text-ink-2">{service.description}</p>
-            </article>
-          ))}
+          {services.map((service, index) => {
+            const image =
+              index === 0 ? photos.residential : index === 3 ? photos.packing : null;
+            return (
+              <article key={service.slug} className="flex flex-col bg-surface-canvas">
+                {image ? (
+                  <BrandPhoto
+                    className="aspect-[16/9] w-full"
+                    src={image.src}
+                    alt={image.alt}
+                    sizes="(max-width: 640px) 100vw, 50vw"
+                  />
+                ) : null}
+                <div className="flex flex-col gap-3 p-7">
+                  <p className="text-eyebrow uppercase text-ink-3">{service.tag}</p>
+                  <h3 className="text-title-2 text-ink-1">{service.name}</h3>
+                  <p className="text-prose text-ink-2">{service.description}</p>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </Section>
 
@@ -138,6 +158,12 @@ export default function QuotePage() {
         title="The moves other firms turn down"
         lead="Medical equipment, fine art, server racks and pianos, handled under their own protocols."
       >
+        <BrandPhoto
+          className="mb-px aspect-[21/9] w-full"
+          src={photos.specialist.src}
+          alt={photos.specialist.alt}
+          sizes="100vw"
+        />
         <div className="grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-4">
           {caseStudies.map((study) => (
             <article key={study.title} className="flex flex-col gap-2 bg-surface-canvas p-6">
@@ -251,6 +277,12 @@ function SiteHeader() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-4">
+          <a
+            href="/login"
+            className="hidden text-body-dense text-ink-2 transition-colors duration-instant ease-standard hover:text-ink-1 md:block"
+          >
+            Staff login
+          </a>
           <a
             href={`tel:${brand.branches[0].tel}`}
             data-numeric

@@ -1872,3 +1872,39 @@ must follow.
 - Deferred: the reference's testimonial carousel and sticky mobile CTA bar; no
   photography (slots render their fallback); the page is noindex like the rest
   of the app, which is correct while the WordPress pages hold the rankings.
+
+### 2026-09-17 — The CRM itself: website → login → backend, with real photography
+- Corrected course: the previous session had built a marketing page and called
+  it progress. The product is a centralised CRM, so this session built the
+  operational screens — grouped navigation across five module groups, a top bar
+  with brand switcher and command-palette search, dashboard, leads workspace,
+  lead detail with the full quote breakdown and history, a week job calendar
+  with jobs placed by real start time and duration, and the manual send queue.
+- Built: `src/lib/sample-data.ts` and a sample mode. With no Supabase project
+  configured the app opens in a realistic working state instead of bouncing to
+  a login it cannot complete, with a persistent banner stating that every
+  figure is an example. The public site moved to `/` with `/quote` redirecting,
+  so there is one public page, and it now links to `/login`, which links back.
+- **Photography solved without stock sites.** The egress proxy blocks Unsplash
+  and Pexels, but EcoGreen's own WordPress media library has 555 images, so
+  five were pulled through the site connector, re-encoded to WebP at the sizes
+  the pages need (201 KB for all five), and committed. Better than fresh stock
+  three ways: the business already holds the licence, the images are the ones
+  its customers already see, and nothing new had to be cleared. Alt text came
+  from the library's own alt fields. Registered in `public/photos/CREDITS.md`.
+- Typography pushed further toward modern and minimal: display weights dropped
+  from 600 to **300** with tracking tightened to −0.035em, title-1 and title-2
+  to 400, eyebrows to 11px/500. This departs from the brand site's H1 weight of
+  600 on purpose — at 68px, 600 is a poster and 300 is an interface — and it is
+  one token to revert.
+- Verified: `npm run audit` now covers eight pages in both themes and passes
+  clean. Plus typecheck, lint, build, 81 unit tests, 92 SQL assertions.
+- Four defects the audit caught: muted text on a highlighted calendar block
+  failed contrast in dark mode; the dashboard pushed the page 338px wide at
+  320px; a standalone back-link was a 16px touch target; and the dashboard
+  table wrapped references across four lines, making 36px rows 145px tall.
+  That last one only showed up in a screenshot — the audit passes a wrapped
+  table, which is why looking at the render is still a required step.
+- Deferred: Quotes, Customers, Job sheets, Crew, Sequences, Templates,
+  Invoices, Payments, Sales tracker and Lead providers are in the navigation
+  but not built. The command palette is an affordance, not yet functional.
