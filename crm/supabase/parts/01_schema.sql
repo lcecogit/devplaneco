@@ -6,7 +6,9 @@
 
 -- ---------------------------------------------------------------------------
 -- Bootstrap. Present at the top of EVERY part so each one stands alone and no
--- part can fail with "schema private does not exist".
+-- part can fail with "schema private does not exist". Helpers live outside
+-- `public` so that RLS policies which call them cannot recurse back through
+-- the very tables those policies protect.
 -- ---------------------------------------------------------------------------
 create schema if not exists private;
 revoke all on schema private from public;
@@ -56,22 +58,6 @@ do $$ begin create type target_period     as enum ('day','week','month'); except
 do $$ begin create type move_size         as enum ('small','medium','large','commercial','office'); exception when duplicate_object then null; end $$;
 do $$ begin create type data_request_kind as enum ('export','erasure'); exception when duplicate_object then null; end $$;
 do $$ begin create type retention_action  as enum ('anonymise','delete'); exception when duplicate_object then null; end $$;
-
--- ---------------------------------------------------------------------------
--- 3. Private schema and the updated_at trigger function
---    Helpers live outside `public` so RLS policies that call them cannot
---    recurse through the tables those policies protect.
--- ---------------------------------------------------------------------------
-create schema if not exists private;
-revoke all on schema private from public;
-
-create or replace function private.touch_updated_at()
-returns trigger language plpgsql as $$
-begin
-  new.updated_at := now();
-  return new;
-end;
-$$;
 
 -- ---------------------------------------------------------------------------
 -- 4. Tenancy and people

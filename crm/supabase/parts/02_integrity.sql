@@ -6,7 +6,9 @@
 
 -- ---------------------------------------------------------------------------
 -- Bootstrap. Present at the top of EVERY part so each one stands alone and no
--- part can fail with "schema private does not exist".
+-- part can fail with "schema private does not exist". Helpers live outside
+-- `public` so that RLS policies which call them cannot recurse back through
+-- the very tables those policies protect.
 -- ---------------------------------------------------------------------------
 create schema if not exists private;
 revoke all on schema private from public;
