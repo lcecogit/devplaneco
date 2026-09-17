@@ -13,7 +13,7 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function TableSkeleton({ rows = 8, columns = 5 }: { rows?: number; columns?: number }) {
   return (
-    <div role="status" aria-label="Loading">
+    <div role="status" aria-label="Loading" className="min-w-0 overflow-hidden">
       {Array.from({ length: rows }).map((_, rowIndex) => (
         <div key={rowIndex} className="flex h-9 items-center gap-6 border-b border-hairline px-3">
           {Array.from({ length: columns }).map((__, columnIndex) => (

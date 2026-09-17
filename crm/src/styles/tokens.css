@@ -9,7 +9,11 @@
   /* ---- Ink ------------------------------------------------------------- */
   --ink-1: #0a0a0b;
   --ink-2: #5e5e66;
-  --ink-3: #7c7c85;
+  /* 5.28:1 on canvas, 4.93:1 on the sunken surface. The obvious muted grey
+     (#7c7c85) measures 4.13:1 and fails AA — an accessibility audit caught it
+     on ten nodes. A design system whose muted colour fails is a trap, because
+     every caption written against it inherits the failure. */
+  --ink-3: #6b6b74;
   --ink-4: #a1a1a9;
   --hairline: rgb(10 10 11 / 0.1);
   --hairline-strong: rgb(10 10 11 / 0.16);
@@ -30,10 +34,15 @@
   --accent-wash: rgb(24 121 78 / 0.08);
 
   /* ---- Status (fixed, never brand-themed) ------------------------------ */
+  /* These are MARK colours — dots, bars, icons — and several sit below 4.5:1
+     on purpose, mitigated by the icon-plus-label pairing. Status used as TEXT
+     takes the -text step below, which is stepped for its surface. Using a mark
+     colour for text is the mistake this split exists to prevent. */
   --status-good: #0ca30c;
   --status-warning: #fab219;
   --status-serious: #ec835a;
   --status-critical: #d03b3b;
+  --status-critical-text: #c0322f;  /* 5.62:1 on canvas */
 
   /* ---- Chart series (fixed order, never cycled — DESIGN.md §7) --------- */
   --series-1: #2a78d6;
@@ -67,7 +76,7 @@
     color-scheme: dark;
     --ink-1: #f5f5f7;
     --ink-2: #a1a1a9;
-    --ink-3: #7c7c85;
+    --ink-3: #8a8a93;
     --ink-4: #5e5e66;
     --hairline: rgb(255 255 255 / 0.12);
     --hairline-strong: rgb(255 255 255 / 0.2);
@@ -76,6 +85,7 @@
     --surface-raised: #141416;
     --surface-overlay: #1c1c1f;
     --surface-scrim: rgb(0 0 0 / 0.56);
+    --status-critical-text: #f0736a;  /* 6.90:1 on the dark canvas */
     --accent: #3fbf84;
     --accent-contrast: #0b0b0c;
     --accent-wash: rgb(63 191 132 / 0.12);
@@ -95,7 +105,7 @@
   color-scheme: dark;
   --ink-1: #f5f5f7;
   --ink-2: #a1a1a9;
-  --ink-3: #7c7c85;
+  --ink-3: #8a8a93;
   --ink-4: #5e5e66;
   --hairline: rgb(255 255 255 / 0.12);
   --hairline-strong: rgb(255 255 255 / 0.2);
@@ -104,6 +114,7 @@
   --surface-raised: #141416;
   --surface-overlay: #1c1c1f;
   --surface-scrim: rgb(0 0 0 / 0.56);
+  --status-critical-text: #f0736a;  /* 6.90:1 on the dark canvas */
   --accent: #3fbf84;
   --accent-contrast: #0b0b0c;
   --accent-wash: rgb(63 191 132 / 0.12);

@@ -29,7 +29,7 @@ export function Field({
       {children}
       <p
         id={`${htmlFor}-hint`}
-        className={cn("min-h-4 text-caption", error ? "text-status-critical" : "text-ink-2")}
+        className={cn("min-h-4 text-caption", error ? "text-status-critical-text" : "text-ink-2")}
       >
         {error ?? hint ?? " "}
       </p>
@@ -50,7 +50,7 @@ export function TextInput({
         "h-11 w-full rounded-md border bg-surface-raised px-4 text-body text-ink-1",
         "placeholder:text-ink-3",
         "transition-colors duration-instant ease-standard",
-        invalid ? "border-status-critical" : "border-hairline",
+        invalid ? "border-status-critical-text" : "border-hairline",
         className,
       )}
       {...props}

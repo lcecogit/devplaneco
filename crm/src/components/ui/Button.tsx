@@ -18,7 +18,8 @@ const VARIANTS: Record<Variant, string> = {
   secondary:
     "bg-transparent text-ink-1 border border-hairline hover:bg-surface-sunken active:bg-surface-sunken",
   ghost: "bg-transparent text-ink-2 hover:bg-surface-sunken hover:text-ink-1",
-  destructive: "bg-transparent text-status-critical border border-hairline hover:bg-surface-sunken",
+  destructive:
+    "bg-transparent text-status-critical-text border border-hairline hover:bg-surface-sunken",
 };
 
 const SIZES: Record<Size, string> = {

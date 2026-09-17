@@ -1765,3 +1765,42 @@ must follow.
   Stripe webhook route, the dispatch calendar, the embeddable widget, the lead
   detail screen, the retention purge job and 2FA enforcement. `SPEC.md` §15
   now records the true status of every milestone rather than a plan.
+
+### 2026-09-17 — Design audit: typography, contrast, layout floors, photography slots
+- Built: `/styleguide` — every primitive and all five required states with
+  static data and no database, as a surface the craft gate can actually run
+  against. `npm run audit` (`crm/scripts/audit.mjs`) — axe across every audit
+  surface in both themes, 320px and 640px layout floors, a keyboard walk
+  asserting a visible focus ring at every stop, and touch-target measurement.
+  `BrandPhoto` with a designed no-asset state, and
+  `crm/public/photos/CREDITS.md` as the sourcing rules and licence register.
+  The sign-in screen is now a two-panel layout using that photography slot.
+- Key decisions: (1) **Weight now drops as size grows, and tracking tightens
+  with it** — display went 600→400 at −0.032em, titles 600→500. That pairing is
+  what separates type reading as modern from type reading as merely large, and
+  it is bound into the size token so a size cannot be used without its optical
+  correction. (2) Status hues are **mark** colours; status used as text takes a
+  separate `-text` step stepped for its surface. (3) Photography is slots plus
+  a designed fallback rather than committed assets — the sandbox network policy
+  blocks Unsplash and Pexels, so no licensed image could be fetched. The
+  fallback is near-neutral on purpose: an accent-tinted first version read as a
+  colour swatch rather than as a surface awaiting a photograph.
+- Verified: `npm run audit` passes clean — zero axe violations at any impact
+  across `/login` and `/styleguide` in both light and dark, zero horizontal
+  overflow at 320px and 640px, a focus ring on every tabbable element, no touch
+  target under 44px. Plus typecheck, lint, build, 81 unit tests and 88 SQL
+  assertions. Screenshots reviewed in both themes.
+- Three real defects the audit caught, all of which would have shipped: the
+  muted ink token `#7c7c85` measures 4.13:1 on white and fails AA — on ten
+  nodes at once, because every caption inherits it, now `#6b6b74` at 5.28:1;
+  `status-critical` used as text measures 4.09:1 on the dark canvas, now a
+  separate text step at 6.90:1; and panels stretched their grid track instead
+  of scrolling, pushing the page 290px wide at a 320px viewport, because a grid
+  item defaults to `min-width: auto` — `Panel`, `DataTable` and `TableSkeleton`
+  now set `min-w-0`. The last one would have hit the real leads table on a
+  phone, not just the styleguide.
+- Also corrected: an earlier touch-target reading of 21px was my own
+  measurement against a stale build, not a defect — real heights are 44px.
+- Deferred: no licensed photography is committed. `BrandPhoto` takes a `src`
+  and the credits register is ready; dropping files into `crm/public/photos`
+  and filling in one row per asset is all that remains.

@@ -48,9 +48,10 @@ import { GeistMono } from "geist/font/mono";
 --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 ```
 
-**Weights: 400, 500, 600 only.** Nothing heavier. Minimalism here is literal —
-hierarchy comes from size, colour and space, not from bold. 700+ is reserved for
-a single hero figure on a dashboard and nowhere else.
+**Weights: 400 and 500 carry the product.** 600 exists for the rare case where a
+label has to separate from dense data beside it, and it appears almost nowhere.
+Nothing heavier exists at all. Minimalism here is literal: hierarchy comes from
+size, colour and space, never from bold.
 
 ### Numerals — a hard rule for this product
 
@@ -73,15 +74,26 @@ in Apple's typography, and the thing most systems skip.
 
 | Token | Size / line-height | Weight | Tracking | Use |
 |---|---|---|---|---|
-| `display` | 48 / 52 | 600 | −0.022em | Hero figure only |
-| `title-1` | 32 / 38 | 600 | −0.018em | Page title |
-| `title-2` | 24 / 30 | 600 | −0.014em | Section |
-| `title-3` | 19 / 26 | 600 | −0.010em | Card / panel heading |
-| `body-lg` | 17 / 26 | 400 | −0.004em | Reading copy, quote PDF |
-| `body` | 15 / 22 | 400 | 0 | Default UI |
+| `display` | 48 / 52 | 400 | −0.032em | Hero figure only |
+| `title-1` | 32 / 38 | 500 | −0.024em | Page title |
+| `title-2` | 24 / 30 | 500 | −0.018em | Section |
+| `title-3` | 19 / 26 | 500 | −0.013em | Card / panel heading |
+| `body-lg` | 17 / 26 | 400 | −0.006em | Reading copy, quote PDF |
+| `body` | 15 / 22 | 400 | −0.002em | Default UI |
 | `body-dense` | 14 / 20 | 400 | 0 | Table cells |
-| `label` | 13 / 18 | 500 | +0.006em | Field labels, badges |
-| `caption` | 12 / 16 | 400 | +0.012em | Helper, timestamps |
+| `label` | 13 / 18 | 500 | +0.004em | Field labels, badges |
+| `caption` | 12 / 16 | 400 | +0.01em | Helper, timestamps |
+
+**Weight drops as size grows, and tracking tightens with it.** This is the
+single change that separates type that reads as modern from type that reads as
+merely large. A 48px headline at weight 600 is a poster; the same headline at
+400 with −0.032em tracking is an interface. Most systems set one weight for all
+headings and wonder why the result looks heavy.
+
+Size and its tracking and weight are bound into one token in
+`tailwind.config.ts`, so a size cannot be used without the optical correction
+that belongs to it. `text-title-1` carries its own weight — never pair it with
+a `font-*` class.
 
 No uppercase-with-wide-tracking micro-labels. They are a 2016 dashboard tic and
 they hurt legibility. Use `label` at `--text-secondary` instead.
@@ -350,8 +362,31 @@ where cancellation is meaningful.
 
 ## 9. The audit gate
 
-A screen ships only when every line passes. Run this before marking any
+A screen ships only when every line passes. Run it before marking any
 `SPEC.md` milestone complete, and record the result in `PROGRESS.md`.
+
+**Most of this is a command, not a checklist**: `npm run audit` (with the app
+running) puts axe against every audit surface in both themes, checks the 320px
+and 640px layout floors, walks the keyboard path asserting a visible focus ring
+at every stop, and flags touch targets under 44px. A gate nobody can run is a
+document, and documents drift.
+
+`/styleguide` exists so the audit has a surface that needs no database and
+shows every primitive and every one of the five states in §8 at once. Those
+states are precisely the ones that never get built, because they are hard to
+reach in the real app.
+
+Three real defects it has caught so far, each of which would have shipped:
+
+- the obvious muted grey (`#7c7c85`) measures **4.13:1** and fails AA — on ten
+  nodes at once, because every caption inherits the token;
+- a status hue used as *text* (`#d03b3b` on the dark canvas, 4.09:1) fails,
+  which is why status now has a separate `-text` step stepped for its surface;
+- panels stretched their grid track instead of scrolling, pushing the page
+  290px wide at 320px — a grid item defaults to `min-width: auto`, so every
+  panel and scroll container now sets `min-w-0`.
+
+The manual lines below are the ones a script cannot judge.
 
 **Type and colour**
 - [ ] Every colour, size, space, radius and duration comes from a token. Zero

@@ -30,12 +30,21 @@ a degraded mode. Set a key, get the real provider — no code changes.
 | `npm test` | 81 unit tests over the pure domain layer |
 | `npm run build` | Production build |
 | `npm run db:verify` | Applies all 19 migrations to a throwaway Postgres and runs 88 SQL assertions |
+| `npm run audit` | The DESIGN.md §9 craft gate: axe in both themes, 320/640px layout floors, keyboard focus rings, touch targets. Needs the app running. |
 | `npm run check` | typecheck + tests |
 
 `db:verify` needs a local Postgres 16 with `btree_gist` and `pg_trgm`
 available. It creates and drops its own database and never touches a hosted
 project. `tests/db/00_supabase_shim.sql` stands in for the auth schema and the
 three PostgREST roles that Supabase provides.
+
+## Looking at it
+
+`/styleguide` renders every primitive and every one of the five required states
+with static data and no database. It is the surface `npm run audit` runs
+against, and the reason the empty, filtered-empty, loading, error and partial
+states actually exist — in a real app they are hard to reach, so they are the
+ones that never get built.
 
 ## Layout
 

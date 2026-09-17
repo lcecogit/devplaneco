@@ -30,7 +30,9 @@ export function DataTable<Row>({
   if (rows.length === 0 && empty) return <>{empty}</>;
 
   return (
-    <div className="overflow-x-auto">
+    // min-w-0 alongside overflow-x-auto: without it the scroll box is sized by
+    // the table when it sits in a grid or flex parent, and scrolls nothing.
+    <div className="min-w-0 overflow-x-auto">
       <table className="w-full border-collapse text-body-dense">
         <caption className="sr-only">{caption}</caption>
         <thead>

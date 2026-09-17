@@ -28,10 +28,13 @@ const config: Config = {
           wash: "var(--accent-wash)",
         },
         status: {
+          // Mark colours. For status as TEXT use `critical-text`, which is
+          // stepped for its surface — see tokens.css.
           good: "var(--status-good)",
           warning: "var(--status-warning)",
           serious: "var(--status-serious)",
           critical: "var(--status-critical)",
+          "critical-text": "var(--status-critical-text)",
         },
         series: {
           1: "var(--series-1)",
@@ -53,21 +56,27 @@ const config: Config = {
         sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
       },
-      /* The type scale from DESIGN.md §1. Tracking tightens as size grows —
-         this pairing is the whole point, so sizes are never used without it. */
+      /* The type scale from DESIGN.md §1.
+         Two things happen together as size grows, and they are what make type
+         read as modern rather than merely large: tracking tightens, and weight
+         drops. A 48px headline at 600 is a poster; the same headline at 400
+         with -0.03em is an interface. Size and its tracking/weight are bound
+         into one token so they cannot be used apart. */
       fontSize: {
-        display: ["3rem", { lineHeight: "3.25rem", letterSpacing: "-0.022em", fontWeight: "600" }],
-        "title-1": ["2rem", { lineHeight: "2.375rem", letterSpacing: "-0.018em", fontWeight: "600" }],
-        "title-2": ["1.5rem", { lineHeight: "1.875rem", letterSpacing: "-0.014em", fontWeight: "600" }],
-        "title-3": ["1.1875rem", { lineHeight: "1.625rem", letterSpacing: "-0.01em", fontWeight: "600" }],
-        "body-lg": ["1.0625rem", { lineHeight: "1.625rem", letterSpacing: "-0.004em" }],
-        body: ["0.9375rem", { lineHeight: "1.375rem", letterSpacing: "0" }],
+        display: ["3rem", { lineHeight: "3.25rem", letterSpacing: "-0.032em", fontWeight: "400" }],
+        "title-1": ["2rem", { lineHeight: "2.375rem", letterSpacing: "-0.024em", fontWeight: "500" }],
+        "title-2": ["1.5rem", { lineHeight: "1.875rem", letterSpacing: "-0.018em", fontWeight: "500" }],
+        "title-3": ["1.1875rem", { lineHeight: "1.625rem", letterSpacing: "-0.013em", fontWeight: "500" }],
+        "body-lg": ["1.0625rem", { lineHeight: "1.625rem", letterSpacing: "-0.006em" }],
+        body: ["0.9375rem", { lineHeight: "1.375rem", letterSpacing: "-0.002em" }],
         "body-dense": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0" }],
-        label: ["0.8125rem", { lineHeight: "1.125rem", letterSpacing: "0.006em", fontWeight: "500" }],
-        caption: ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.012em" }],
+        label: ["0.8125rem", { lineHeight: "1.125rem", letterSpacing: "0.004em", fontWeight: "500" }],
+        caption: ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.01em" }],
       },
       fontWeight: {
-        /* 400/500/600 only. Hierarchy comes from size, colour and space. */
+        /* 400 and 500 carry the product. 600 exists for the rare case where a
+           label must separate from dense data beside it, and appears almost
+           nowhere — hierarchy comes from size, colour and space. */
         normal: "400",
         medium: "500",
         semibold: "600",

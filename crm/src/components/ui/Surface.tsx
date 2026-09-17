@@ -16,7 +16,12 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rounded-lg border border-hairline bg-surface-raised",
+        // min-w-0 is not cosmetic. A grid or flex item defaults to
+        // min-width:auto, so a wide child — a table, a long reference, a
+        // skeleton row — stretches its track instead of scrolling inside it,
+        // and the whole page goes wide on a phone. An audit at 320px caught
+        // exactly this. Every panel opts out of that default.
+        "min-w-0 rounded-lg border border-hairline bg-surface-raised",
         padded && "p-6",
         className,
       )}
