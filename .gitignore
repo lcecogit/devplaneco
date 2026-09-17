@@ -37,3 +37,9 @@ next-env.d.ts
 
 # local Claude Code session/permission state (machine-specific)
 .claude/settings.local.json
+
+# CRM app
+crm/node_modules
+crm/.next
+crm/next-env.d.ts
+crm/*.tsbuildinfo

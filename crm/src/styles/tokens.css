@@ -1,0 +1,119 @@
+/* Design tokens — the single source of colour, type, space, shape and motion.
+   DESIGN.md is normative; this file is its implementation. Nothing else in the
+   codebase may declare a raw hex, a px radius, a shadow or a transition
+   duration. If a value is needed that is not here, it belongs here first. */
+
+:root {
+  color-scheme: light;
+
+  /* ---- Ink ------------------------------------------------------------- */
+  --ink-1: #0a0a0b;
+  --ink-2: #5e5e66;
+  --ink-3: #7c7c85;
+  --ink-4: #a1a1a9;
+  --hairline: rgb(10 10 11 / 0.1);
+  --hairline-strong: rgb(10 10 11 / 0.16);
+
+  /* ---- Surfaces -------------------------------------------------------- */
+  --surface-canvas: #ffffff;
+  --surface-sunken: #f7f7f8;
+  --surface-raised: #ffffff;
+  --surface-overlay: #ffffff;
+  --surface-scrim: rgb(10 10 11 / 0.32);
+
+  /* ---- Accent ---------------------------------------------------------- */
+  /* Set per brand at runtime by BrandTheme. The fallback is EcoGreen Movers,
+     so a missing brand renders a correct-looking page rather than an unstyled
+     one. Both steps clear 4.5:1 on their own surface — see DECISIONS.md §1. */
+  --accent: #18794e;
+  --accent-contrast: #ffffff;
+  --accent-wash: rgb(24 121 78 / 0.08);
+
+  /* ---- Status (fixed, never brand-themed) ------------------------------ */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+
+  /* ---- Chart series (fixed order, never cycled — DESIGN.md §7) --------- */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+  --series-diverging-mid: #f0efec;
+
+  /* ---- Elevation ------------------------------------------------------- */
+  --shadow-1: 0 1px 2px rgb(10 10 11 / 0.05);
+  --shadow-2: 0 4px 12px rgb(10 10 11 / 0.08);
+  --shadow-3: 0 16px 48px rgb(10 10 11 / 0.14);
+
+  /* ---- Motion ---------------------------------------------------------- */
+  --motion-instant: 120ms;
+  --motion-quick: 200ms;
+  --motion-settled: 320ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-emphasised: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Dark mode is a designed second theme, not an inversion: every value below
+   was chosen against its own surface. The :where() keeps this block's
+   specificity at zero so an explicit light stamp always wins. */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --ink-1: #f5f5f7;
+    --ink-2: #a1a1a9;
+    --ink-3: #7c7c85;
+    --ink-4: #5e5e66;
+    --hairline: rgb(255 255 255 / 0.12);
+    --hairline-strong: rgb(255 255 255 / 0.2);
+    --surface-canvas: #0b0b0c;
+    --surface-sunken: #09090a;
+    --surface-raised: #141416;
+    --surface-overlay: #1c1c1f;
+    --surface-scrim: rgb(0 0 0 / 0.56);
+    --accent: #3fbf84;
+    --accent-contrast: #0b0b0c;
+    --accent-wash: rgb(63 191 132 / 0.12);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+    --series-diverging-mid: #383835;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink-1: #f5f5f7;
+  --ink-2: #a1a1a9;
+  --ink-3: #7c7c85;
+  --ink-4: #5e5e66;
+  --hairline: rgb(255 255 255 / 0.12);
+  --hairline-strong: rgb(255 255 255 / 0.2);
+  --surface-canvas: #0b0b0c;
+  --surface-sunken: #09090a;
+  --surface-raised: #141416;
+  --surface-overlay: #1c1c1f;
+  --surface-scrim: rgb(0 0 0 / 0.56);
+  --accent: #3fbf84;
+  --accent-contrast: #0b0b0c;
+  --accent-wash: rgb(63 191 132 / 0.12);
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+  --series-diverging-mid: #383835;
+}
