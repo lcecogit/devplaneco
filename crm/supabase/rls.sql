@@ -8,6 +8,14 @@
 --  adding its policy is a bug that fails closed rather than leaking.
 -- ============================================================================
 
+-- The schema the helpers live in. Created here as well as in schema.sql so
+-- this script stands alone: running it against a database where schema.sql
+-- was applied is a no-op, and running it on its own does not fail on a
+-- missing schema.
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to authenticated;
+
 -- Role ranking, so a policy can say "manager or above" without listing roles.
 create or replace function private.role_rank(r public.brand_role)
 returns int
