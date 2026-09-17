@@ -1944,3 +1944,24 @@ must follow.
   automated check passes a chart drawn in the wrong colour.
 - Deferred: 38 of the 44 modules are routed but not built. `RECOMMENDATIONS.md`
   §6 gives the build order, starting with the pricing matrix and cost capture.
+
+## Session — SQL install verified end to end
+
+The `3F000: schema "private" does not exist` error is closed out, and now
+proven closed rather than asserted.
+
+- Added `crm/scripts/parts-verify.sh` (`npm run db:verify:parts`). It applies
+  `supabase/parts/*.sql` to a throwaway Postgres 16 three ways: each part alone
+  on an empty database, all five in order, then all five in order again.
+- Results: part 1 succeeds standalone; parts 2–5 refuse with a plain-English
+  message naming the part to run first (`Run PART 1 (schema) first — table
+  "quotes" does not exist.`), never `3F000`. All five in order succeed, and
+  succeed again on a second pass. Final shape: 42 tables, 68 RLS policies, RLS
+  enabled on all 42, 10 `private` helpers, 6 brands, 67 catalogue items,
+  36 rate-card rows.
+- Rewrote `crm/scripts/bundle-sql.sh` to generate `supabase/install.sql` from
+  the parts rather than from the superseded `migrations/` directory, and
+  regenerated it (2,556 lines / 123 KB). Verified `install.sql` alone on a
+  clean database, twice, zero errors.
+- Throwaway cluster stopped and deleted afterwards; nothing hosted, nothing
+  billable.

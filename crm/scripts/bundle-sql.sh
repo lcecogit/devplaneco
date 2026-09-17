@@ -1,22 +1,28 @@
 #!/usr/bin/env bash
-# Bundles every migration into supabase/setup.sql — one file to paste into the
-# Supabase SQL Editor. Wrapped in a transaction so a failure part-way leaves
-# the project untouched rather than half-migrated.
-#
-# Run after adding or changing any migration:  npm run sql:bundle
+# Concatenates supabase/parts/*.sql into supabase/install.sql — the one file to
+# paste into the Supabase SQL Editor when the whole script fits in one go.
+# The parts stay the source of truth; this is generated. Run: npm run sql:bundle
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUT="$ROOT/supabase/setup.sql"
-HEAD_FILE="$ROOT/supabase/setup.header.sql"
+OUT="$ROOT/supabase/install.sql"
 
 {
-  cat "$HEAD_FILE"
-  printf '\nbegin;\n'
-  for f in "$ROOT"/supabase/migrations/*.sql; do
-    printf '\n\n-- ===========================================================================\n-- %s\n-- ===========================================================================\n\n' "$(basename "$f")"
+  cat <<'HEADER'
+-- ==========================================================================
+--  EcoGreen Group CRM — COMPLETE INSTALL
+--
+--  Generated from supabase/parts/*.sql by scripts/bundle-sql.sh. Do not edit
+--  by hand; edit the parts and re-run the script.
+--
+--  Paste the whole file into the Supabase SQL Editor and run it. It is safe to
+--  re-run. If your editor truncates a paste this long, run the five files in
+--  supabase/parts/ one at a time instead, in numerical order.
+-- ==========================================================================
+HEADER
+  for f in "$ROOT"/supabase/parts/*.sql; do
+    printf '\n\n-- ##########################################################################\n-- # %s\n-- ##########################################################################\n\n' "$(basename "$f")"
     cat "$f"
   done
-  printf '\n\ncommit;\n'
 } > "$OUT"
 
-printf 'Wrote %s (%s lines)\n' "$OUT" "$(wc -l < "$OUT")"
+printf 'Wrote %s (%s lines, %s bytes)\n' "$OUT" "$(wc -l < "$OUT")" "$(wc -c < "$OUT")"

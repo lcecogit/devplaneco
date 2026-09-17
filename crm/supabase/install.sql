@@ -1,16 +1,18 @@
--- ============================================================================
+-- ==========================================================================
 --  EcoGreen Group CRM — COMPLETE INSTALL
 --
---  Run top to bottom. Safe to re-run: if an earlier attempt stopped part-way,
---  running this again completes what is missing rather than failing.
+--  Generated from supabase/parts/*.sql by scripts/bundle-sql.sh. Do not edit
+--  by hand; edit the parts and re-run the script.
 --
---  Each of the five parts below is ALSO self-sufficient: every one creates the
---  `private` schema if it is absent and checks its prerequisites first, so a
---  part run on its own reports what to run rather than failing with a cryptic
---  "schema private does not exist".
--- ============================================================================
+--  Paste the whole file into the Supabase SQL Editor and run it. It is safe to
+--  re-run. If your editor truncates a paste this long, run the five files in
+--  supabase/parts/ one at a time instead, in numerical order.
+-- ==========================================================================
 
 
+-- ##########################################################################
+-- # 01_schema.sql
+-- ##########################################################################
 
 -- ==========================================================================
 --  EcoGreen Group CRM — PART 1 — SCHEMA: extensions, enums, tables, indexes, triggers
@@ -902,6 +904,9 @@ begin
 end $$;
 
 
+-- ##########################################################################
+-- # 02_integrity.sql
+-- ##########################################################################
 
 -- ==========================================================================
 --  EcoGreen Group CRM — PART 2 — INTEGRITY: references, quote freezing, audit immutability
@@ -1076,6 +1081,9 @@ create trigger staff_brand_access_guard
   for each row execute function private.guard_brand_access_change();
 
 
+-- ##########################################################################
+-- # 03_security.sql
+-- ##########################################################################
 
 -- ==========================================================================
 --  EcoGreen Group CRM — PART 3 — SECURITY: helpers and row level security
@@ -1568,6 +1576,9 @@ create policy retention_policies_write on retention_policies for all to authenti
 revoke all on all tables in schema public from anon;
 
 
+-- ##########################################################################
+-- # 04_functions.sql
+-- ##########################################################################
 
 -- ==========================================================================
 --  EcoGreen Group CRM — PART 4 — FUNCTIONS: intake, booking, scheduler, job sheets, GDPR
@@ -2246,6 +2257,9 @@ $$;
 revoke all on function erase_customer_data from public, anon, authenticated;
 
 
+-- ##########################################################################
+-- # 05_seed.sql
+-- ##########################################################################
 
 -- ==========================================================================
 --  EcoGreen Group CRM — PART 5 — SEED DATA: brands, catalogue, rate cards, sequences
