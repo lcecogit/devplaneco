@@ -1671,3 +1671,58 @@ must follow.
   `ROADMAP.md` rather than scheduled (facial-recognition clock-in, in-house
   PAYE/NI calculation, tachograph integration, customs declarations, 3D room
   visualiser); each carries its reasoning there.
+
+### 2026-09-17 — CRM Phase 1: M0 scaffold, M1 schema/RLS, M4 pricing engine
+- Built: the `crm/` app — Next.js 14 + Supabase + Tailwind, Vercel-targeted,
+  with `src/styles/tokens.css` as the single source of colour, type, space,
+  shape and motion. 16 migrations under `crm/supabase/migrations`. The pure
+  domain layer under `crm/src/domain` (money, clock, item catalogue, volume,
+  pricing engine, pipeline transitions, duplicate/cross-brand matching, lead
+  scoring, routing, sequence scheduler). UI primitives, staff shell, login,
+  dashboard and leads workspace. `DECISIONS.md` answers the four items
+  `SPEC.md` §1 had blocked on business input.
+- Key decisions: (1) `crm/` is its own app with its own Supabase project — the
+  marketplace's partner/auction model conflicts with an in-house operations
+  model, and its 56 migrations were not worth destabilising. (2) Geist Sans and
+  Geist Mono, self-hosted: SF Pro is not licensable as a webfont and
+  `-apple-system` would fragment the product across Windows and Android.
+  (3) Charts are deliberately NOT brand-themed — the eight-slot categorical
+  order in `DESIGN.md` §7 is validated (worst adjacent CVD ΔE 9.1 light / 8.4
+  dark) and would stop being readable if tinted per brand. (4) Seed migrations
+  for the catalogue, rate cards and sequences are GENERATED from the TypeScript
+  domain definitions by `npm run seed:generate`, so the database and the
+  pricing engine cannot drift. (5) Double-booking, quote immutability,
+  audit-log append-only and outbox idempotency are all database constraints,
+  not application checks.
+- Verified, not assumed: `npm run typecheck` clean; `npm run lint` clean;
+  `npm run build` green; 60 unit tests pass; `npm run db:verify` applies all 16
+  migrations to a throwaway Postgres 16 and passes 47 assertions covering brand
+  isolation both ways, crew price exclusion, privilege escalation,
+  double-booking, quote freezing, attendance, outbox and webhook idempotency,
+  and seed integrity. The running app was smoke-tested: `/login` renders 200
+  with the security headers, `/dashboard` 307s to `/login` without a session,
+  `robots.txt` disallows everything, and the login screen was screenshotted in
+  both themes at 1280px and checked for horizontal overflow at 320px.
+- Three bugs were found by those checks and fixed: the sequence-step
+  stop-condition CHECK used `array_length()`, which is NULL for an empty array
+  and so passed; `next_reference()` had an ambiguous plpgsql variable; and an
+  RLS escalation test was passing vacuously because the subquery it used was
+  itself filtered by RLS. Worth carrying forward: an RLS denial on UPDATE or
+  DELETE is a silent no-op, not an error, so application code must check
+  affected-row counts rather than relying on a thrown error.
+- Blocked on business input (recommended defaults are seeded and flagged, see
+  `DECISIONS.md`): real brand hex values and logos; the actual rate card — every
+  seeded card carries `provisional = true`, which is intended to drive a
+  PROVISIONAL PRICING watermark on the quote PDF; current TfL congestion and
+  ULEZ rates, seeded at zero rather than guessed; the gov.uk bank-holiday list;
+  retention periods, which need legal sign-off, and Scotland's differing
+  prescription period for the Edinburgh and Glasgow brands.
+- Deferred / not done yet, within Phase 1: M2 intake API and embeddable widget;
+  M3 lead detail and stage transitions in the UI (the domain logic exists and is
+  tested, nothing is wired to a route); M5 quote PDF and view tracking; M6
+  payments, webhooks and the booking transaction; M7 the cron tick and outbox
+  dispatcher (the scheduler is pure and tested, but nothing calls it yet); M8
+  the dispatch calendar and job sheet; M9 dashboards beyond the four KPI tiles;
+  M10 GDPR export/erasure and 2FA. `crm/src/lib/db-types.ts` is hand-written and
+  should be replaced by generated Supabase types once a project exists. No
+  Supabase project has been created — that incurs cost and was not authorised.
