@@ -1908,3 +1908,39 @@ must follow.
 - Deferred: Quotes, Customers, Job sheets, Crew, Sequences, Templates,
   Invoices, Payments, Sales tracker and Lead providers are in the navigation
   but not built. The command palette is an affordance, not yet functional.
+
+### 2026-09-17 — Green/teal palette, dashboard charts, full module map, recommendations
+- Built: the palette re-derived as deep green + blue-green + white +
+  near-black, with every neutral carrying a green bias so the near-black reads
+  as the same family rather than sitting on top of the greens. Chart components
+  (sparkline, two-series line, bar rows, actual-against-target) as inline SVG
+  with no library, each with a table view and native `<title>` tooltips. The
+  dashboard rebuilt around four headline figures with sparklines, leads
+  year-on-year, pipeline by stage, booked-against-target by brand, lead source
+  performance, crew on shift and the send queue. The left panel expanded from
+  15 to **44 modules across 10 groups**, with unbuilt ones marked "soon".
+  `RECOMMENDATIONS.md` documents the module map, a seven-component pricing
+  matrix, the people/time/payroll boundary, and 54 improvements ordered by
+  return.
+- Key decisions: (1) **The product palette owns the interface; a brand is a
+  mark, not a repaint.** The previous per-brand `--accent` override meant the
+  UI changed colour on brand switch and, because an inline value outranks a
+  theme, silently overrode dark mode — charts rendered in the light-mode brand
+  colour on a dark ground. Per-brand colour still drives what customers see:
+  PDFs, emails, the public site. (2) The pipeline funnel uses **position for
+  order and one colour**, because a five-step ordinal ramp cannot clear the
+  contrast floor against both a white and a near-black surface. (3) The chart
+  order was **validated, not chosen** — aqua-led so the first series sits in
+  the brand family, worst adjacent CVD ΔE 9.1, worst normal-vision ΔE 27.6,
+  all eight above 3:1, in both modes. (4) Targets are a reference rule on the
+  same axis, never a second y-scale. (5) Type tightened again: display 2.75rem
+  at weight 300 and −0.038em, body to 14px.
+- Verified: `npm run audit` across eight pages in both themes passes clean;
+  typecheck, lint, build, 81 unit tests, 92 SQL assertions.
+- Two defects caught: `--ink-4` on the "soon" nav items failed contrast in dark
+  mode on 40 nodes — and distinguishing planned modules by colour alone was
+  wrong regardless, so they now carry the word "soon"; and the brand-accent
+  override described above, which only showed up in a screenshot because every
+  automated check passes a chart drawn in the wrong colour.
+- Deferred: 38 of the 44 modules are routed but not built. `RECOMMENDATIONS.md`
+  §6 gives the build order, starting with the pricing matrix and cost capture.

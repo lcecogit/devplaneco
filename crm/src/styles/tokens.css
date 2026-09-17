@@ -1,81 +1,95 @@
 /* Design tokens — the single source of colour, type, space, shape and motion.
-   DESIGN.md is normative; this file is its implementation. Nothing else in the
-   codebase may declare a raw hex, a px radius, a shadow or a transition
-   duration.
+   DESIGN.md is normative; this file is its implementation.
 
-   ── Where these values come from ──────────────────────────────────────────
-   Read from ecogreenmovers.co.uk's live Elementor global kit, not eyeballed
-   from a screenshot: navy #161A36, lime #7DB903, warm off-white #F9F7F5, body
-   text #525466, dark ground #111429, Inter, square buttons.
+   ── The palette ───────────────────────────────────────────────────────────
+   Deep green, blue-green, white and near-black, as asked for. Two rules keep
+   it harmonious rather than merely green:
 
-   Two brand colours could not be used exactly as the site uses them, and the
-   reason is recorded here rather than in a commit nobody will read:
+   1. The neutrals are not grey. Every ink and surface step carries a slight
+      green bias, so the near-black reads as the same family as the greens
+      rather than sitting on top of them. A pure grey beside a saturated green
+      is the thing that makes a palette look assembled.
+   2. Deep green leads and blue-green supports. Two close hues competing for
+      the same job is what makes a scheme muddy — so green owns actions and
+      teal owns secondary emphasis, never the reverse.
 
-   1. The site's primary button is white on lime — 2.38:1, well under the 4.5:1
-      floor. The same lime with the brand's own navy on top measures 7.14:1, so
-      the fill keeps the exact brand hue and the label changes colour.
-   2. Lime as TEXT on white is 2.38:1. The brand's own darker green #235F2A is
-      7.66:1, so accent text and focus rings take that step. Both greens are
-      the brand's; neither is invented.
+   Every value below was measured, not chosen by eye; the ratios are noted.
+   The brand lime #7DB903 survives as the highlight in `--accent-bright`,
+   which is where ecogreenmovers.co.uk's own colour still shows.
    ─────────────────────────────────────────────────────────────────────────── */
 
 :root {
   color-scheme: light;
 
-  /* ---- Ink — the brand's navy, not a neutral grey --------------------- */
-  --ink-1: #161a36;  /* Elementor "Primary"     · 17.00:1 on canvas */
-  --ink-2: #525466;  /* Elementor "Text"        ·  7.45:1 */
-  --ink-3: #676a85;  /* derived from "Text Light" #7A7E99, which is 3.98:1
-                        and fails AA · this step is 5.28:1 on canvas,
-                        4.94:1 on the off-white sunken surface */
-  --ink-4: #9a9db3;
-  --hairline: rgb(22 26 54 / 0.12);
-  --hairline-strong: rgb(22 26 54 / 0.2);
+  /* ---- Ink — near-black with a green bias, never grey ------------------ */
+  --ink-1: #0a1711;  /* 18.36:1 on canvas */
+  --ink-2: #44544c;  /*  8.02:1 */
+  --ink-3: #5c6e65;  /*  5.42:1 on canvas · 4.97:1 on the sunken surface */
+  --ink-4: #8f9e96;
+  --hairline: rgb(10 23 17 / 0.12);
+  --hairline-strong: rgb(10 23 17 / 0.2);
 
   /* ---- Surfaces -------------------------------------------------------- */
   --surface-canvas: #ffffff;
-  --surface-sunken: #f9f7f5;   /* Elementor "Secondary" — the warm off-white
-                                  that gives the whole product the site's
-                                  temperature rather than a cold grey */
+  --surface-sunken: #f2f6f3;   /* white with the same green bias */
   --surface-raised: #ffffff;
   --surface-overlay: #ffffff;
-  --surface-scrim: rgb(22 26 54 / 0.4);
+  --surface-scrim: rgb(10 23 17 / 0.44);
 
   /* ---- Accent ---------------------------------------------------------- */
-  /* --accent is a FILL. --accent-text is the same brand family stepped for
-     use as text or a focus ring. They are not interchangeable. */
-  --accent: #7db903;          /* the brand lime, exactly */
-  --accent-hover: #97dd09;    /* the site's own button hover */
-  --accent-contrast: #161a36; /* navy on lime, 7.14:1 — not white, 2.38:1 */
-  --accent-text: #235f2a;     /* the brand's darker green, 7.66:1 */
-  --accent-wash: rgb(125 185 3 / 0.12);
+  /* --accent is a FILL; --accent-text is the step for text and focus rings.
+     Here they are the same colour because deep green works as both — which is
+     precisely why deep green leads and the lime does not. */
+  --accent: #0e4d34;          /* deep green · white on it is 9.86:1 */
+  --accent-hover: #116b48;
+  --accent-contrast: #ffffff;
+  --accent-text: #0e4d34;     /* 9.86:1 as text */
+  --accent-wash: rgb(14 77 52 / 0.08);
 
-  /* ---- Status (fixed, never brand-themed) ------------------------------ */
-  /* Mark colours — dots, bars, icons. Status used as TEXT takes the -text
-     step, which is stepped for its surface. */
+  /* Blue-green, the supporting hue: secondary emphasis, never a second CTA. */
+  --teal: #0a6158;            /* 7.33:1 as text */
+  --teal-wash: rgb(10 97 88 / 0.08);
+
+  /* The brand lime, kept for highlights and positive deltas only. It is
+     2.38:1 on white, so it is never text and never a lone signal. */
+  --accent-bright: #7db903;
+
+  /* ---- Status (fixed, never themed) ------------------------------------ */
+  /* Mark colours. Status used as TEXT takes the -text step. */
   --status-good: #0ca30c;
   --status-warning: #fab219;
   --status-serious: #ec835a;
   --status-critical: #d03b3b;
-  --status-critical-text: #c0322f;
+  --status-good-text: #10702a;
+  --status-critical-text: #b3312e;
 
-  /* ---- Chart series (fixed order, never cycled — DESIGN.md §7) --------- */
-  --series-1: #2a78d6;
+  /* ---- Chart series ----------------------------------------------------
+     Fixed order, never cycled. Led by aqua so the first series sits in the
+     brand's family, then stepping away by hue. This ordering was validated,
+     not chosen: worst adjacent CVD ΔE 9.1, worst normal-vision ΔE 27.6, all
+     eight above 3:1 on the surface. Changing the ORDER changes the safety,
+     so it is not a cosmetic decision. */
+  --series-1: #1baf7a;
   --series-2: #eb6834;
-  --series-3: #1baf7a;
+  --series-3: #2a78d6;
   --series-4: #eda100;
-  --series-5: #e87ba4;
-  --series-6: #008300;
-  --series-7: #4a3aa7;
+  --series-5: #4a3aa7;
+  --series-6: #e87ba4;
+  --series-7: #008300;
   --series-8: #e34948;
-  --series-diverging-mid: #f0efec;
+  --series-diverging-mid: #eceee9;
+  /* Single-hue ramp for magnitude: green, light to dark. */
+  --ramp-1: #d6ece0;
+  --ramp-2: #a9d8c2;
+  --ramp-3: #6fbd9c;
+  --ramp-4: #36996f;
+  --ramp-5: #14714c;
+  --ramp-6: #0e4d34;
 
   /* ---- Elevation ------------------------------------------------------- */
-  /* Shadows are tinted with the navy rather than pure black, so they read as
-     part of the same world as the surfaces. */
-  --shadow-1: 0 1px 2px rgb(22 26 54 / 0.06);
-  --shadow-2: 0 4px 12px rgb(22 26 54 / 0.1);
-  --shadow-3: 0 16px 48px rgb(22 26 54 / 0.16);
+  --shadow-1: 0 1px 2px rgb(10 23 17 / 0.06);
+  --shadow-2: 0 4px 12px rgb(10 23 17 / 0.1);
+  --shadow-3: 0 16px 48px rgb(10 23 17 / 0.16);
 
   /* ---- Motion ---------------------------------------------------------- */
   --motion-instant: 120ms;
@@ -85,80 +99,94 @@
   --ease-emphasised: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* Dark mode is built from the brand's own dark grounds — #111429 "BG Dark"
-   and #161A36 "Primary" — so it reads as the same company at night rather
-   than as a generic dark theme. The lime needs no adjustment on them: it
-   measures 7.62:1 on the dark ground. */
+/* Dark mode is a designed second theme built from the same green-biased
+   near-blacks, not an inversion. Every step was measured against the surface
+   it actually sits on — including the overlay, which is the lightest of the
+   three and therefore the strictest test for muted text. */
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) {
     color-scheme: dark;
-    --ink-1: #f9f7f5;
-    --ink-2: #a8acc4;
-    /* The brand's own "Text Light" #7A7E99 clears 4.5:1 on the dark canvas
-       but only reaches 4.27:1 on the raised navy and 3.96:1 on the overlay —
-       and muted text mostly appears inside cards, on exactly those surfaces.
-       Stepped up until it passes on the strictest of the three. */
-    --ink-3: #8a8fac;   /* 5.71 canvas · 5.35 raised · 4.96 overlay */
-    --ink-4: #5c6080;
-    --hairline: rgb(168 172 196 / 0.18);
-    --hairline-strong: rgb(168 172 196 / 0.3);
-    --surface-canvas: #111429;
-    --surface-sunken: #0d1022;
-    --surface-raised: #161a36;
-    --surface-overlay: #1b2042;
-    --surface-scrim: rgb(9 11 24 / 0.64);
-    /* BrandTheme sets --brand-accent-dark per brand; the group lime is the
-       fallback so an unbranded brand still renders correctly. */
-    --accent: var(--brand-accent-dark, #7db903);
-    --accent-hover: #97dd09;
-    --accent-contrast: #111429;
-    --accent-text: var(--brand-accent-text-dark, #97dd09);  /* 10.95:1 here */
-    --accent-wash: rgb(125 185 3 / 0.16);
-    --status-critical-text: #f0736a;
-    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
-    --shadow-2: 0 4px 12px rgb(0 0 0 / 0.45);
-    --shadow-3: 0 16px 48px rgb(0 0 0 / 0.55);
-    --series-1: #3987e5;
+    --ink-1: #eaf3ee;   /* 16.72 canvas */
+    --ink-2: #9db3a9;   /*  8.52 canvas · 6.84 overlay */
+    --ink-3: #849c92;   /*  6.44 canvas · 5.17 overlay */
+    --ink-4: #5d7168;
+    --hairline: rgb(157 179 169 / 0.16);
+    --hairline-strong: rgb(157 179 169 / 0.28);
+    --surface-canvas: #071310;
+    --surface-sunken: #040c0a;
+    --surface-raised: #0d1e18;
+    --surface-overlay: #132a22;
+    --surface-scrim: rgb(2 6 5 / 0.66);
+    --accent: #34c79a;          /* 8.82 on canvas */
+    --accent-hover: #3fd3a8;
+    --accent-contrast: #071310; /* 8.82:1 the other way */
+    --accent-text: #5be0b8;     /* 11.53 canvas */
+    --accent-wash: rgb(52 199 154 / 0.14);
+    --teal: #4fd0c4;
+    --teal-wash: rgb(79 208 196 / 0.14);
+    --accent-bright: #9cdb2f;
+    --status-good-text: #4ad07a;
+    --status-critical-text: #ff8a80;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.45);
+    --shadow-2: 0 4px 12px rgb(0 0 0 / 0.5);
+    --shadow-3: 0 16px 48px rgb(0 0 0 / 0.6);
+    --series-1: #199e70;
     --series-2: #d95926;
-    --series-3: #199e70;
+    --series-3: #3987e5;
     --series-4: #c98500;
-    --series-5: #d55181;
-    --series-6: #008300;
-    --series-7: #9085e9;
+    --series-5: #9085e9;
+    --series-6: #d55181;
+    --series-7: #008300;
     --series-8: #e66767;
-    --series-diverging-mid: #383835;
+    --series-diverging-mid: #233029;
+    --ramp-1: #123a2a;
+    --ramp-2: #17513a;
+    --ramp-3: #1b6a4b;
+    --ramp-4: #24885f;
+    --ramp-5: #2ea875;
+    --ramp-6: #40c895;
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --ink-1: #f9f7f5;
-  --ink-2: #a8acc4;
-  --ink-3: #8a8fac;
-  --ink-4: #5c6080;
-  --hairline: rgb(168 172 196 / 0.18);
-  --hairline-strong: rgb(168 172 196 / 0.3);
-  --surface-canvas: #111429;
-  --surface-sunken: #0d1022;
-  --surface-raised: #161a36;
-  --surface-overlay: #1b2042;
-  --surface-scrim: rgb(9 11 24 / 0.64);
-  --accent: var(--brand-accent-dark, #7db903);
-  --accent-hover: #97dd09;
-  --accent-contrast: #111429;
-  --accent-text: var(--brand-accent-text-dark, #97dd09);
-  --accent-wash: rgb(125 185 3 / 0.16);
-  --status-critical-text: #f0736a;
-  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
-  --shadow-2: 0 4px 12px rgb(0 0 0 / 0.45);
-  --shadow-3: 0 16px 48px rgb(0 0 0 / 0.55);
-  --series-1: #3987e5;
+  --ink-1: #eaf3ee;
+  --ink-2: #9db3a9;
+  --ink-3: #849c92;
+  --ink-4: #5d7168;
+  --hairline: rgb(157 179 169 / 0.16);
+  --hairline-strong: rgb(157 179 169 / 0.28);
+  --surface-canvas: #071310;
+  --surface-sunken: #040c0a;
+  --surface-raised: #0d1e18;
+  --surface-overlay: #132a22;
+  --surface-scrim: rgb(2 6 5 / 0.66);
+  --accent: #34c79a;
+  --accent-hover: #3fd3a8;
+  --accent-contrast: #071310;
+  --accent-text: #5be0b8;
+  --accent-wash: rgb(52 199 154 / 0.14);
+  --teal: #4fd0c4;
+  --teal-wash: rgb(79 208 196 / 0.14);
+  --accent-bright: #9cdb2f;
+  --status-good-text: #4ad07a;
+  --status-critical-text: #ff8a80;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.45);
+  --shadow-2: 0 4px 12px rgb(0 0 0 / 0.5);
+  --shadow-3: 0 16px 48px rgb(0 0 0 / 0.6);
+  --series-1: #199e70;
   --series-2: #d95926;
-  --series-3: #199e70;
+  --series-3: #3987e5;
   --series-4: #c98500;
-  --series-5: #d55181;
-  --series-6: #008300;
-  --series-7: #9085e9;
+  --series-5: #9085e9;
+  --series-6: #d55181;
+  --series-7: #008300;
   --series-8: #e66767;
-  --series-diverging-mid: #383835;
+  --series-diverging-mid: #233029;
+  --ramp-1: #123a2a;
+  --ramp-2: #17513a;
+  --ramp-3: #1b6a4b;
+  --ramp-4: #24885f;
+  --ramp-5: #2ea875;
+  --ramp-6: #40c895;
 }

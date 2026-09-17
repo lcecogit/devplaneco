@@ -12,44 +12,106 @@ export const dynamic = "force-dynamic";
 
 /** Grouped by the part of the business that owns each module, which is also
  *  how the team is split. A flat list of twenty modules cannot be scanned. */
+/** The full module set for a centralised CRM, grouped by the part of the
+ *  business that owns each one — which is also how the team is split.
+ *
+ *  Modules marked `soon` are routed but not built; they appear because the
+ *  shape of the system should be visible from day one, and because a nav that
+ *  grows module by module never gets grouped properly. RECOMMENDATIONS.md
+ *  explains what each one is for and the order to build them in. */
 const NAV: readonly NavGroup[] = [
   {
-    label: "Pipeline",
+    label: "Today",
     items: [
       { href: "/dashboard", label: "Dashboard" },
+      { href: "/inbox", label: "Send queue" },
+      { href: "/tasks", label: "My tasks", soon: true },
+    ],
+  },
+  {
+    label: "Sales",
+    items: [
       { href: "/leads", label: "Leads" },
-      { href: "/quotes", label: "Quotes" },
-      { href: "/customers", label: "Customers" },
+      { href: "/quotes", label: "Quotes", soon: true },
+      { href: "/surveys", label: "Surveys & video", soon: true },
+      { href: "/customers", label: "Customers", soon: true },
+      { href: "/accounts", label: "Corporate accounts", soon: true },
+      { href: "/providers", label: "Lead providers", soon: true },
+    ],
+  },
+  {
+    label: "Pricing",
+    items: [
+      { href: "/rate-cards", label: "Rate cards", soon: true },
+      { href: "/inventory", label: "Item catalogue", soon: true },
+      { href: "/materials", label: "Packing materials", soon: true },
+      { href: "/promos", label: "Promo codes", soon: true },
     ],
   },
   {
     label: "Operations",
     items: [
       { href: "/calendar", label: "Job calendar" },
-      { href: "/jobs", label: "Job sheets" },
-      { href: "/crew", label: "Crew & vehicles" },
+      { href: "/jobs", label: "Job sheets", soon: true },
+      { href: "/routes", label: "Routes & loads", soon: true },
+      { href: "/fleet", label: "Fleet & vehicles", soon: true },
+      { href: "/storage", label: "Storage", soon: true },
+      { href: "/subcontractors", label: "Subcontractors", soon: true },
     ],
   },
   {
-    label: "Communication",
+    label: "People",
     items: [
-      { href: "/inbox", label: "Send queue" },
-      { href: "/sequences", label: "Sequences" },
-      { href: "/templates", label: "Templates" },
+      { href: "/attendance", label: "Attendance", soon: true },
+      { href: "/rota", label: "Rota & availability", soon: true },
+      { href: "/staff", label: "Staff & skills", soon: true },
+      { href: "/payroll", label: "Payroll export", soon: true },
+      { href: "/training", label: "Training & compliance", soon: true },
     ],
   },
   {
     label: "Money",
     items: [
-      { href: "/invoices", label: "Invoices" },
-      { href: "/payments", label: "Payments" },
+      { href: "/invoices", label: "Invoices", soon: true },
+      { href: "/payments", label: "Payments", soon: true },
+      { href: "/reconciliation", label: "Reconciliation", soon: true },
+      { href: "/purchasing", label: "Purchasing", soon: true },
+      { href: "/cashflow", label: "Cash flow", soon: true },
+    ],
+  },
+  {
+    label: "Communication",
+    items: [
+      { href: "/sequences", label: "Sequences", soon: true },
+      { href: "/templates", label: "Templates", soon: true },
+      { href: "/broadcasts", label: "Broadcasts", soon: true },
+      { href: "/reviews", label: "Reviews", soon: true },
+    ],
+  },
+  {
+    label: "Compliance",
+    items: [
+      { href: "/documents", label: "Documents", soon: true },
+      { href: "/claims", label: "Damage claims", soon: true },
+      { href: "/incidents", label: "Health & safety", soon: true },
+      { href: "/gdpr", label: "Data requests", soon: true },
     ],
   },
   {
     label: "Insight",
     items: [
-      { href: "/reports", label: "Sales tracker" },
-      { href: "/providers", label: "Lead providers" },
+      { href: "/reports", label: "Sales tracker", soon: true },
+      { href: "/branches", label: "Branch scorecards", soon: true },
+      { href: "/attribution", label: "Marketing attribution", soon: true },
+      { href: "/audit", label: "Audit log", soon: true },
+    ],
+  },
+  {
+    label: "Settings",
+    items: [
+      { href: "/brands", label: "Brands", soon: true },
+      { href: "/users", label: "Users & access", soon: true },
+      { href: "/integrations", label: "Integrations", soon: true },
     ],
   },
 ];
@@ -82,13 +144,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
   const brand = brands[0];
 
   return (
-    <BrandTheme
-      accent={brand?.accent_hex ?? "#7DB903"}
-      accentDark={brand?.accent_dark_hex ?? "#7DB903"}
-      accentText={brand?.accent_text_hex ?? "#235F2A"}
-      accentTextDark={brand?.accent_text_dark_hex ?? "#97DD09"}
-      accentContrast={brand?.accent_contrast_hex ?? "#161A36"}
-    >
+    <BrandTheme mark={brand?.accent_hex ?? "#7DB903"}>
       <div className="flex min-h-dvh bg-surface-canvas">
         <aside className="hidden w-56 shrink-0 border-r border-hairline bg-surface-sunken lg:block">
           <div className="sticky top-0 flex h-14 items-center px-6">

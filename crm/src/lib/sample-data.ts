@@ -102,3 +102,51 @@ export const sampleTargets = [
   { size: "Commercial", bookedMinor: 1_486_000, targetMinor: 2_000_000, count: 3 },
   { size: "Office", bookedMinor: 1_240_000, targetMinor: 1_500_000, count: 2 },
 ] as const;
+
+/* ── Chart data ──────────────────────────────────────────────────────────── */
+
+export const weekLabels = ["W29", "W30", "W31", "W32", "W33", "W34", "W35", "W36", "W37"] as const;
+
+export const leadsThisYear = [34, 41, 38, 52, 47, 61, 58, 66, 72] as const;
+export const leadsLastYear = [29, 33, 36, 40, 44, 42, 49, 51, 55] as const;
+
+export const conversionTrend = [22, 24, 23, 27, 26, 29, 31, 30, 33] as const;
+export const responseTrend = [310, 280, 240, 260, 210, 190, 160, 150, 140] as const;
+export const revenueTrend = [186, 204, 198, 241, 233, 288, 301, 322, 356] as const;
+
+/** Stage counts, in pipeline order. Order is carried by position, not by a
+ *  colour ramp — a five-step ramp cannot clear the contrast floor against
+ *  both a white and a near-black surface. */
+export const pipelineStages = [
+  { label: "New", value: 38 },
+  { label: "Qualifying", value: 29 },
+  { label: "Quoted", value: 24 },
+  { label: "Chasing", value: 17 },
+  { label: "Booked", value: 11 },
+] as const;
+
+export const sourcePerformance = [
+  { label: "Website form", value: 41, note: "32% conv" },
+  { label: "Google Ads", value: 28, note: "24% conv" },
+  { label: "Google organic", value: 23, note: "35% conv" },
+  { label: "Lead provider", value: 19, note: "11% conv" },
+  { label: "Referral", value: 14, note: "48% conv" },
+  { label: "WhatsApp", value: 9, note: "29% conv" },
+] as const;
+
+export const brandTargets = [
+  { label: "EcoGreen", actualMinor: 3_120_000, targetMinor: 3_500_000 },
+  { label: "Eco London", actualMinor: 1_480_000, targetMinor: 1_200_000 },
+  { label: "Manchester", actualMinor: 890_000, targetMinor: 1_000_000 },
+  { label: "Edinburgh", actualMinor: 640_000, targetMinor: 900_000 },
+  { label: "Glasgow", actualMinor: 410_000, targetMinor: 400_000 },
+  { label: "Continuum", actualMinor: 220_000, targetMinor: 600_000 },
+] as const;
+
+export const crewToday = [
+  { name: "Ash", role: "Driver", hours: 7.5, status: "On a job" },
+  { name: "Ayualyssa", role: "Field logistics", hours: 7.5, status: "On a job" },
+  { name: "David", role: "Dispatch", hours: 8.0, status: "Depot" },
+  { name: "H", role: "Specialist", hours: 6.0, status: "On a job" },
+  { name: "Sam", role: "Dispatch", hours: 0, status: "Not clocked in" },
+] as const;

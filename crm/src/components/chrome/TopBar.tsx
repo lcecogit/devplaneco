@@ -27,7 +27,14 @@ export function TopBar({
 
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center gap-4 border-b border-hairline bg-surface-canvas px-4 md:px-6">
-      <div className="flex min-w-0 items-baseline gap-2">
+      <div className="flex min-w-0 items-center gap-2">
+        {/* The brand's own colour, at the one size where it identifies without
+            competing with the data. */}
+        <span
+          className="h-2 w-2 shrink-0 rounded-full"
+          style={{ background: "var(--brand-mark, var(--accent))" }}
+          aria-hidden
+        />
         <span className="truncate text-body-dense font-medium text-ink-1">{brandName}</span>
         {brandCount > 1 ? (
           <span className="shrink-0 text-caption text-ink-3">+{brandCount - 1} more</span>

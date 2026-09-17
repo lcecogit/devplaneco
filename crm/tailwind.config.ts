@@ -37,6 +37,13 @@ const config: Config = {
           serious: "var(--status-serious)",
           critical: "var(--status-critical)",
           "critical-text": "var(--status-critical-text)",
+          "good-text": "var(--status-good-text)",
+        },
+        teal: { DEFAULT: "var(--teal)", wash: "var(--teal-wash)" },
+        bright: "var(--accent-bright)",
+        ramp: {
+          1: "var(--ramp-1)", 2: "var(--ramp-2)", 3: "var(--ramp-3)",
+          4: "var(--ramp-4)", 5: "var(--ramp-5)", 6: "var(--ramp-6)",
         },
         series: {
           1: "var(--series-1)",
@@ -77,20 +84,20 @@ const config: Config = {
            They are for customer-facing pages only. Staff screens stay on the
            interface scale below, where 300-weight body at 14px would be too
            fragile to read all day. */
-        hero: ["4.25rem", { lineHeight: "1.06", letterSpacing: "-0.035em", fontWeight: "300" }],
-        "hero-sm": ["2.25rem", { lineHeight: "1.1", letterSpacing: "-0.03em", fontWeight: "300" }],
-        prose: ["1rem", { lineHeight: "1.5", letterSpacing: "0", fontWeight: "300" }],
-        "prose-lg": ["1.25rem", { lineHeight: "1.55", letterSpacing: "-0.004em", fontWeight: "300" }],
-        eyebrow: ["0.6875rem", { lineHeight: "1.5", letterSpacing: "0.14em", fontWeight: "500" }],
-        display: ["3rem", { lineHeight: "1.1", letterSpacing: "-0.034em", fontWeight: "300" }],
-        "title-1": ["2rem", { lineHeight: "1.18", letterSpacing: "-0.028em", fontWeight: "400" }],
-        "title-2": ["1.5rem", { lineHeight: "1.25", letterSpacing: "-0.022em", fontWeight: "400" }],
-        "title-3": ["1.0625rem", { lineHeight: "1.4", letterSpacing: "-0.012em", fontWeight: "500" }],
-        "body-lg": ["1.0625rem", { lineHeight: "1.625rem", letterSpacing: "-0.006em" }],
-        body: ["0.9375rem", { lineHeight: "1.375rem", letterSpacing: "-0.002em" }],
-        "body-dense": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0" }],
-        label: ["0.8125rem", { lineHeight: "1.125rem", letterSpacing: "0.004em", fontWeight: "500" }],
-        caption: ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.01em" }],
+        hero: ["4rem", { lineHeight: "1.04", letterSpacing: "-0.04em", fontWeight: "300" }],
+        "hero-sm": ["2.125rem", { lineHeight: "1.08", letterSpacing: "-0.032em", fontWeight: "300" }],
+        prose: ["0.9375rem", { lineHeight: "1.6", letterSpacing: "-0.002em", fontWeight: "300" }],
+        "prose-lg": ["1.125rem", { lineHeight: "1.6", letterSpacing: "-0.008em", fontWeight: "300" }],
+        eyebrow: ["0.625rem", { lineHeight: "1.5", letterSpacing: "0.16em", fontWeight: "500" }],
+        display: ["2.75rem", { lineHeight: "1.06", letterSpacing: "-0.038em", fontWeight: "300" }],
+        "title-1": ["1.75rem", { lineHeight: "1.15", letterSpacing: "-0.032em", fontWeight: "300" }],
+        "title-2": ["1.3125rem", { lineHeight: "1.25", letterSpacing: "-0.024em", fontWeight: "400" }],
+        "title-3": ["1rem", { lineHeight: "1.4", letterSpacing: "-0.014em", fontWeight: "500" }],
+        "body-lg": ["1rem", { lineHeight: "1.55", letterSpacing: "-0.008em" }],
+        body: ["0.875rem", { lineHeight: "1.4", letterSpacing: "-0.004em" }],
+        "body-dense": ["0.8125rem", { lineHeight: "1.25rem", letterSpacing: "-0.002em" }],
+        label: ["0.75rem", { lineHeight: "1.1rem", letterSpacing: "0.002em", fontWeight: "500" }],
+        caption: ["0.6875rem", { lineHeight: "1rem", letterSpacing: "0.008em" }],
       },
       fontWeight: {
         /* 400 and 500 carry the product. 600 exists for the rare case where a
