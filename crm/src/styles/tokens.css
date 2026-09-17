@@ -94,7 +94,11 @@
     color-scheme: dark;
     --ink-1: #f9f7f5;
     --ink-2: #a8acc4;
-    --ink-3: #7a7e99;   /* the brand's own "Text Light", 4.56:1 here */
+    /* The brand's own "Text Light" #7A7E99 clears 4.5:1 on the dark canvas
+       but only reaches 4.27:1 on the raised navy and 3.96:1 on the overlay —
+       and muted text mostly appears inside cards, on exactly those surfaces.
+       Stepped up until it passes on the strictest of the three. */
+    --ink-3: #8a8fac;   /* 5.71 canvas · 5.35 raised · 4.96 overlay */
     --ink-4: #5c6080;
     --hairline: rgb(168 172 196 / 0.18);
     --hairline-strong: rgb(168 172 196 / 0.3);
@@ -130,7 +134,7 @@
   color-scheme: dark;
   --ink-1: #f9f7f5;
   --ink-2: #a8acc4;
-  --ink-3: #7a7e99;
+  --ink-3: #8a8fac;
   --ink-4: #5c6080;
   --hairline: rgb(168 172 196 / 0.18);
   --hairline-strong: rgb(168 172 196 / 0.3);

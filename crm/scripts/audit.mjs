@@ -16,7 +16,7 @@ import { chromium } from "playwright";
 import { AxeBuilder } from "@axe-core/playwright";
 
 const BASE = process.env.AUDIT_BASE ?? "http://localhost:3000";
-const PAGES = ["/login", "/styleguide"];
+const PAGES = ["/login", "/styleguide", "/quote"];
 const out = process.argv[2];
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });
 let failures = 0;

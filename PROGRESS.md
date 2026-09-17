@@ -1838,3 +1838,37 @@ must follow.
 - Deferred: Eco London Movers has no WordPress connector in this session, so
   its identity could not be read. The other three unbranded sites need a real
   brand before their accents mean anything.
+
+### 2026-09-17 — Customer-facing quote funnel at /quote
+- Built: a public quote page following the structure of the StudioOS reference
+  the user supplied (sticky header · hero with eyebrow, large headline, dual
+  CTAs, social proof and an overlapping detail card · services grid · reasons
+  with testimonials · specialist work · three-step explainer · enquiry form ·
+  footer), rebuilt entirely on EcoGreen's own brand. `src/lib/brand-content.ts`
+  holds the copy; `QuoteForm` posts the shape `/api/intake/lead` accepts, so a
+  submission becomes a routed, scored, de-duplicated lead.
+- Key decisions: (1) **Every string is the business's own.** Headline, service
+  names, the three branch numbers, the reviews and the case studies were read
+  from ecogreenmovers.co.uk through the WordPress connector. Nothing about
+  coverage, credentials or customer outcomes is invented. (2) **No price
+  appears.** The reference has four pricing cards; the rate card here is still
+  provisional and this business quotes a fixed price rather than publishing
+  one, so that section became a three-step "how pricing works" explainer.
+  Inventing a "from £X" would have been both wrong and off-brand. (3) The
+  brand site's own H1 (68px/1.2/600) and body (16px/1.5/300) sizes were added
+  as `hero` and `prose` tokens, scoped to customer-facing pages — 300-weight
+  body at 14px would be too fragile for staff screens read all day. (4) This
+  does not replace the WordPress sites (SPEC.md §1, decision 4); it is the
+  funnel they link into.
+- Verified: `npm run audit` passes clean across `/login`, `/styleguide` and
+  `/quote` in both themes — zero axe violations, no overflow at 320/640px,
+  focus ring on every tabbable. Plus typecheck, lint, build, 81 unit tests, 92
+  SQL assertions.
+- One defect found: the brand's own "Text Light" `#7A7E99` clears 4.5:1 on the
+  dark canvas but only reaches 4.27:1 on the raised navy and 3.96:1 on the
+  overlay — and muted text mostly appears inside cards, on exactly those
+  surfaces. Stepped to `#8A8FAC`, which passes on all three. The earlier check
+  had tested the canvas only.
+- Deferred: the reference's testimonial carousel and sticky mobile CTA bar; no
+  photography (slots render their fallback); the page is noindex like the rest
+  of the app, which is correct while the WordPress pages hold the rankings.
