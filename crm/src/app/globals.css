@@ -12,9 +12,10 @@
   body {
     background: var(--surface-canvas);
     color: var(--ink-1);
-    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-    /* Geist is drawn tightly enough that default UI text needs no extra
-       tracking; the negative steps live on the larger type scale tokens. */
+    font-family: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
+    /* Inter's own stylistic defaults, matching how the brand sites set it.
+       tnum and zero are applied per-element by the .tnum utility rather than
+       globally, so running text keeps proportional figures. */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -22,7 +23,9 @@
   /* One focus treatment for the whole product. Visible, accent-coloured, and
      never removed — DESIGN.md §9 gates on this. */
   :focus-visible {
-    outline: 2px solid var(--accent);
+    /* The text step, not the fill: a focus ring has to read against the page,
+       and the brand lime is 2.38:1 on white. */
+    outline: 2px solid var(--accent-text);
     outline-offset: 2px;
     border-radius: 4px;
   }

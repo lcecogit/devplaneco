@@ -19,39 +19,33 @@ source of colour, type, spacing and motion in the codebase.
 
 ## 1. Typeface
 
-**SF Pro is not an option.** Apple's font licence covers use in interfaces for
-Apple platforms and related documentation; it does not licence SF Pro as a
-webfont for a commercial web application. Using it here would be a licence
-breach, and `-apple-system` only reaches macOS and iOS users — the CRM is used
-on Windows desktops and Android phones, where the stack would silently fall back
-to Segoe UI and Roboto and the product would look like three different products.
+**Inter**, self-hosted from npm via `@fontsource-variable/inter`.
 
-**Use Geist Sans and Geist Mono**, self-hosted via the `geist` npm package.
+This is the brand's own choice, not a designer's: ecogreenmovers.co.uk sets
+Inter for body, headings and buttons in its Elementor global kit. Matching it
+means the CRM, the quote PDF, the customer portal and the marketing site read
+as one company — which matters most on exactly the surfaces a customer sees.
 
-Why this and not Inter: Geist is a neutral grotesque drawn specifically for
-interfaces, with slightly more geometric, closed forms and tighter default
-spacing than Inter — which is precisely the "more modern, more minimal" read
-being asked for. It is variable (one file, any weight), it self-hosts with no
-external request and no CLS, it ships a matched monospace, and it is
-first-party to the Vercel deploy target. Inter Variable is the acceptable
-fallback if the business objects; nothing else in this file changes if it is
-swapped.
+It is self-hosted rather than linked from Google Fonts because Google Fonts is
+blocked both by this environment's egress policy and by the artifact CSP, and
+because a third-party font request costs a round trip and a layout shift
+regardless.
 
-```ts
-// crm/src/app/layout.tsx
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
-```
+**One typeface across all six brands, deliberately.** Where the group's other
+sites are branded at all they use different faces — Glasgow Moving sets
+Instrument Sans, Removals Company Manchester sets Heebo — but a CRM that
+changes typeface when a user switches brand reads as six products rather than
+one platform. Brand identity travels through the accent, the logo and the
+document templates instead.
 
-```css
---font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
---font-mono: var(--font-geist-mono), ui-monospace, monospace;
-```
+**Geist Mono** stays for reference codes and figures. The marketing sites have
+no need for a monospace; a system full of job references and money does.
 
 **Weights: 400 and 500 carry the product.** 600 exists for the rare case where a
 label has to separate from dense data beside it, and it appears almost nowhere.
 Nothing heavier exists at all. Minimalism here is literal: hierarchy comes from
-size, colour and space, never from bold.
+size, colour and space, never from bold. (The brand site sets body at 300, which
+is elegant at 16px on a marketing page and too fragile for dense data at 14px.)
 
 ### Numerals — a hard rule for this product
 
@@ -110,56 +104,59 @@ the timezone implied by a single UK-wide setting.
 
 ## 2. Colour
 
-Near-monochrome by default. Colour is information, not decoration: an accent
-means "this is the action", a status colour means "this needs attention", and
-everything else is ink on paper.
+**Taken from the live site, not eyeballed from a screenshot.** Every value
+below was read out of ecogreenmovers.co.uk's Elementor global kit through the
+WordPress connector.
 
-### Ink ramp (neutral, marginally cool)
-
-| Token | Light | Dark |
+| Brand token | Hex | Used here as |
 |---|---|---|
-| `--ink-1` (primary text) | `#0A0A0B` | `#F5F5F7` |
-| `--ink-2` (secondary) | `#5E5E66` | `#A1A1A9` |
-| `--ink-3` (muted / placeholder) | `#7C7C85` | `#7C7C85` |
-| `--ink-4` (disabled) | `#A1A1A9` | `#5E5E66` |
-| `--hairline` | `rgb(10 10 11 / 0.10)` | `rgb(255 255 255 / 0.12)` |
-| `--hairline-strong` | `rgb(10 10 11 / 0.16)` | `rgb(255 255 255 / 0.20)` |
+| Primary (navy) | `#161A36` | `--ink-1`, primary text, 17.00:1 |
+| Text | `#525466` | `--ink-2`, 7.45:1 |
+| Secondary (warm off-white) | `#F9F7F5` | `--surface-sunken` |
+| Accent (lime) | `#7DB903` | `--accent`, fills only |
+| Darker Green | `#235F2A` | `--accent-text`, 7.66:1 |
+| BG Dark | `#111429` | dark canvas |
+| Primary (navy) | `#161A36` | dark raised surface |
+| Text Light | `#7A7E99` | dark `--ink-3`, 4.56:1 |
 
-### Surfaces
+The ink ramp is the brand's navy rather than a neutral grey, and the sunken
+surface is the brand's warm off-white rather than a cold one. Those two
+substitutions do most of the work of making the product feel like the site.
 
-| Token | Light | Dark |
-|---|---|---|
-| `--surface-canvas` | `#FFFFFF` | `#0B0B0C` |
-| `--surface-sunken` | `#F7F7F8` | `#09090A` |
-| `--surface-raised` | `#FFFFFF` | `#141416` |
-| `--surface-overlay` | `#FFFFFF` | `#1C1C1F` |
-| `--surface-scrim` | `rgb(10 10 11 / 0.32)` | `rgb(0 0 0 / 0.56)` |
+### Two places the brand could not be copied literally
 
-Dark mode is a **designed second theme**, not an inverted first one. Every token
-above was chosen for its own surface. Ship both from M0; retrofitting dark mode
-is how a system ends up with 40 one-off hex values.
+Both are recorded in `tokens.css` beside the values, because a future reader
+will otherwise "fix" them back:
 
-### Accent — one per brand, used sparingly
+1. **The site's primary button is white on lime — 2.38:1.** That fails AA by a
+   wide margin. The same lime carrying the brand's own navy is **7.14:1**, so
+   the fill keeps the exact brand hue and the label changes colour. This is
+   worth fixing on the website too.
+2. **Lime as text is 2.38:1 on white.** Accent text, links and focus rings take
+   the brand's own darker green `#235F2A` at 7.66:1. Both greens belong to the
+   brand; neither was invented.
 
-The accent appears on the primary button, the active nav item, the focus ring,
-selected state, and progress. Nowhere else. A screen should be readable in
-greyscale with no loss of meaning.
+This is why an accent is **four tokens, not one**: a fill (`--accent`), what
+sits on that fill (`--accent-contrast`), the same family stepped for text
+(`--accent-text`), and the dark-mode pair. A single "brand colour" variable
+cannot express a hue that works as a fill and fails as text — and most do.
 
-| Brand | Placeholder accent |
-|---|---|
-| EcoGreen Movers | `#18794E` |
-| Eco London Movers | `#0B5FA5` |
-| Continuum Green | `#146B63` |
-| Removals Company Manchester | `#B42318` |
-| Edinburgh Moving | `#43467F` |
-| Glasgow Moving | `#1D4ED8` |
+### Accent per brand
 
-**These are placeholders.** Replace with each brand's real values before M0 is
-signed off. Any replacement MUST clear 4.5:1 against `--surface-canvas` when
-used for text and 3:1 when used for a UI boundary, in both themes. If a real
-brand colour fails, keep the brand colour for the logo and derive a darker
-accessible step for interactive use — do not ship a failing contrast ratio to
-preserve a hex.
+| Brand | Fill | On the fill | As text | Source |
+|---|---|---|---|---|
+| EcoGreen Movers | `#7DB903` | `#161A36` | `#235F2A` | live site |
+| Glasgow Moving | `#E4581B` | `#1D1A16` | `#B8420E` | live site |
+| Eco London Movers | group default | | | **not yet branded** |
+| Continuum Green | group default | | | **not yet branded** |
+| Removals Company Manchester | group default | | | **not yet branded** |
+| Edinburgh Moving | group default | | | **not yet branded** |
+
+Four of the six sites still carry Elementor's factory defaults (`#6EC1E4` /
+`#61CE70`), and continuumgreen.co.uk is still titled "We Are Building Continuum
+Green". **A theme default is not a brand**, so those four are not seeded as if
+it were: they inherit the flagship palette and carry
+`brand_identity_confirmed = false` so nobody later mistakes one for a decision.
 
 ### Status — fixed, never brand-themed
 
@@ -175,9 +172,19 @@ colour-blind users, greyscale printing of job sheets, and forced-colours mode.
 **4 px base grid.** Scale: 4, 8, 12, 16, 20, 24, 32, 40, 56, 80. Nothing
 between. If a layout needs 18 px, the layout is wrong.
 
-**Radius**: `sm 6` (inputs, badges) · `md 10` (buttons, cards) · `lg 14`
-(panels, modals) · `xl 20` (sheets) · `full` (avatars, pills). One radius per
-component family, consistently.
+**Radius — square, following the brand.** ecogreenmovers.co.uk sets a button
+radius of `0`, and that squareness is the most recognisable thing about its
+components. Controls match it exactly: `sm 0` (inputs, badges), `md 0`
+(buttons). Containers take the smallest possible softening — `lg 2` (panels,
+modals), `xl 4` (sheets) — so stacked panels and dense tables do not read as
+harsh at small sizes. `full` stays for avatars and status dots.
+
+**Buttons follow the site's treatment**: square, generous horizontal padding
+(the site uses 42px), uppercase at weight 500 with wide tracking, and a 1px
+border in the fill's own colour. Uppercase micro-labels are banned everywhere
+else in this document — on a button the string is short enough that legibility
+is unaffected, and it is the brand's signature. A documented exception, scoped
+to one component, not drift.
 
 **Elevation — three levels, and prefer none.**
 

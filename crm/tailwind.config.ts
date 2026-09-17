@@ -23,8 +23,10 @@ const config: Config = {
           overlay: "var(--surface-overlay)",
         },
         accent: {
-          DEFAULT: "var(--accent)",
-          contrast: "var(--accent-contrast)",
+          DEFAULT: "var(--accent)",          // a FILL
+          hover: "var(--accent-hover)",
+          contrast: "var(--accent-contrast)", // what sits ON the fill
+          text: "var(--accent-text)",         // the accent AS text or a ring
           wash: "var(--accent-wash)",
         },
         status: {
@@ -53,7 +55,11 @@ const config: Config = {
         strong: "var(--hairline-strong)",
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        // Inter, self-hosted: the typeface ecogreenmovers.co.uk sets for body,
+        // headings and buttons. Google Fonts is blocked by the artifact CSP and
+        // by this environment's egress policy, so it ships from npm via
+        // @fontsource-variable/inter rather than a CDN link.
+        sans: ["'Inter Variable'", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
       },
       /* The type scale from DESIGN.md §1.
@@ -94,11 +100,15 @@ const config: Config = {
         14: "56px",
         20: "80px",
       },
+      /* Square, following the brand: ecogreenmovers.co.uk sets a button
+         radius of 0. Controls are square exactly as the site is; containers
+         take the smallest possible softening so dense tables and stacked
+         panels do not read as harsh at small sizes. */
       borderRadius: {
-        sm: "6px",
-        md: "10px",
-        lg: "14px",
-        xl: "20px",
+        sm: "0px",
+        md: "0px",
+        lg: "2px",
+        xl: "4px",
       },
       boxShadow: {
         1: "var(--shadow-1)",

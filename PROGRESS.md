@@ -1804,3 +1804,37 @@ must follow.
 - Deferred: no licensed photography is committed. `BrandPhoto` takes a `src`
   and the credits register is ready; dropping files into `crm/public/photos`
   and filling in one row per asset is all that remains.
+
+### 2026-09-17 — Theme rebuilt from the real EcoGreen brand
+- Built: the whole token system re-derived from ecogreenmovers.co.uk's live
+  Elementor global kit, read through the WordPress connector rather than
+  eyeballed: navy `#161A36` as the ink ramp, the brand's warm off-white
+  `#F9F7F5` as the sunken surface, lime `#7DB903` as the accent, `#111429` and
+  `#161A36` as the dark grounds, Inter (self-hosted via
+  `@fontsource-variable/inter`), and square controls matching the site's button
+  radius of 0 with its uppercase, wide-tracked, generously padded treatment.
+  Migration 0020 carries the real brand records, including
+  `info@ecogreenmovers.co.uk` and the real logo URL.
+- Key decisions: (1) An accent is **four tokens, not one** — a fill, what sits
+  on the fill, the same family stepped for text, and the dark pair. EcoGreen
+  forced this: its lime works as a fill at any size and fails as text. (2) One
+  typeface across all six brands even though Glasgow Moving sets Instrument
+  Sans and Removals Company Manchester sets Heebo — a CRM that changes typeface
+  on brand switch reads as six products. (3) Four of the six sites still carry
+  Elementor factory defaults (`#6EC1E4`/`#61CE70`) and continuumgreen.co.uk is
+  still titled "We Are Building Continuum Green"; a theme default is not a
+  brand, so those four inherit the flagship palette and carry
+  `brand_identity_confirmed = false` rather than being seeded as if designed.
+- **Two accessibility findings on the live website**, both worth fixing there:
+  its primary button is white on the lime at **2.38:1**, and the lime as text
+  on white is the same. The brand's own navy on that lime is 7.14:1 and its own
+  darker green `#235F2A` is 7.66:1 as text, so the CRM keeps the exact brand
+  hues and changes only what sits on or beside them. Recorded in `tokens.css`
+  beside the values so nobody "fixes" them back.
+- Verified: `npm run audit` passes clean on the new palette — zero axe
+  violations in both themes, no overflow at 320/640px, focus ring on every
+  tabbable, no target under 44px. Plus typecheck, lint, build, 81 unit tests
+  and 92 SQL assertions. Preview republished.
+- Deferred: Eco London Movers has no WordPress connector in this session, so
+  its identity could not be read. The other three unbranded sites need a real
+  brand before their accents mean anything.

@@ -1,48 +1,63 @@
 /* Design tokens — the single source of colour, type, space, shape and motion.
    DESIGN.md is normative; this file is its implementation. Nothing else in the
    codebase may declare a raw hex, a px radius, a shadow or a transition
-   duration. If a value is needed that is not here, it belongs here first. */
+   duration.
+
+   ── Where these values come from ──────────────────────────────────────────
+   Read from ecogreenmovers.co.uk's live Elementor global kit, not eyeballed
+   from a screenshot: navy #161A36, lime #7DB903, warm off-white #F9F7F5, body
+   text #525466, dark ground #111429, Inter, square buttons.
+
+   Two brand colours could not be used exactly as the site uses them, and the
+   reason is recorded here rather than in a commit nobody will read:
+
+   1. The site's primary button is white on lime — 2.38:1, well under the 4.5:1
+      floor. The same lime with the brand's own navy on top measures 7.14:1, so
+      the fill keeps the exact brand hue and the label changes colour.
+   2. Lime as TEXT on white is 2.38:1. The brand's own darker green #235F2A is
+      7.66:1, so accent text and focus rings take that step. Both greens are
+      the brand's; neither is invented.
+   ─────────────────────────────────────────────────────────────────────────── */
 
 :root {
   color-scheme: light;
 
-  /* ---- Ink ------------------------------------------------------------- */
-  --ink-1: #0a0a0b;
-  --ink-2: #5e5e66;
-  /* 5.28:1 on canvas, 4.93:1 on the sunken surface. The obvious muted grey
-     (#7c7c85) measures 4.13:1 and fails AA — an accessibility audit caught it
-     on ten nodes. A design system whose muted colour fails is a trap, because
-     every caption written against it inherits the failure. */
-  --ink-3: #6b6b74;
-  --ink-4: #a1a1a9;
-  --hairline: rgb(10 10 11 / 0.1);
-  --hairline-strong: rgb(10 10 11 / 0.16);
+  /* ---- Ink — the brand's navy, not a neutral grey --------------------- */
+  --ink-1: #161a36;  /* Elementor "Primary"     · 17.00:1 on canvas */
+  --ink-2: #525466;  /* Elementor "Text"        ·  7.45:1 */
+  --ink-3: #676a85;  /* derived from "Text Light" #7A7E99, which is 3.98:1
+                        and fails AA · this step is 5.28:1 on canvas,
+                        4.94:1 on the off-white sunken surface */
+  --ink-4: #9a9db3;
+  --hairline: rgb(22 26 54 / 0.12);
+  --hairline-strong: rgb(22 26 54 / 0.2);
 
   /* ---- Surfaces -------------------------------------------------------- */
   --surface-canvas: #ffffff;
-  --surface-sunken: #f7f7f8;
+  --surface-sunken: #f9f7f5;   /* Elementor "Secondary" — the warm off-white
+                                  that gives the whole product the site's
+                                  temperature rather than a cold grey */
   --surface-raised: #ffffff;
   --surface-overlay: #ffffff;
-  --surface-scrim: rgb(10 10 11 / 0.32);
+  --surface-scrim: rgb(22 26 54 / 0.4);
 
   /* ---- Accent ---------------------------------------------------------- */
-  /* Set per brand at runtime by BrandTheme. The fallback is EcoGreen Movers,
-     so a missing brand renders a correct-looking page rather than an unstyled
-     one. Both steps clear 4.5:1 on their own surface — see DECISIONS.md §1. */
-  --accent: #18794e;
-  --accent-contrast: #ffffff;
-  --accent-wash: rgb(24 121 78 / 0.08);
+  /* --accent is a FILL. --accent-text is the same brand family stepped for
+     use as text or a focus ring. They are not interchangeable. */
+  --accent: #7db903;          /* the brand lime, exactly */
+  --accent-hover: #97dd09;    /* the site's own button hover */
+  --accent-contrast: #161a36; /* navy on lime, 7.14:1 — not white, 2.38:1 */
+  --accent-text: #235f2a;     /* the brand's darker green, 7.66:1 */
+  --accent-wash: rgb(125 185 3 / 0.12);
 
   /* ---- Status (fixed, never brand-themed) ------------------------------ */
-  /* These are MARK colours — dots, bars, icons — and several sit below 4.5:1
-     on purpose, mitigated by the icon-plus-label pairing. Status used as TEXT
-     takes the -text step below, which is stepped for its surface. Using a mark
-     colour for text is the mistake this split exists to prevent. */
+  /* Mark colours — dots, bars, icons. Status used as TEXT takes the -text
+     step, which is stepped for its surface. */
   --status-good: #0ca30c;
   --status-warning: #fab219;
   --status-serious: #ec835a;
   --status-critical: #d03b3b;
-  --status-critical-text: #c0322f;  /* 5.62:1 on canvas */
+  --status-critical-text: #c0322f;
 
   /* ---- Chart series (fixed order, never cycled — DESIGN.md §7) --------- */
   --series-1: #2a78d6;
@@ -56,9 +71,11 @@
   --series-diverging-mid: #f0efec;
 
   /* ---- Elevation ------------------------------------------------------- */
-  --shadow-1: 0 1px 2px rgb(10 10 11 / 0.05);
-  --shadow-2: 0 4px 12px rgb(10 10 11 / 0.08);
-  --shadow-3: 0 16px 48px rgb(10 10 11 / 0.14);
+  /* Shadows are tinted with the navy rather than pure black, so they read as
+     part of the same world as the surfaces. */
+  --shadow-1: 0 1px 2px rgb(22 26 54 / 0.06);
+  --shadow-2: 0 4px 12px rgb(22 26 54 / 0.1);
+  --shadow-3: 0 16px 48px rgb(22 26 54 / 0.16);
 
   /* ---- Motion ---------------------------------------------------------- */
   --motion-instant: 120ms;
@@ -68,27 +85,35 @@
   --ease-emphasised: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* Dark mode is a designed second theme, not an inversion: every value below
-   was chosen against its own surface. The :where() keeps this block's
-   specificity at zero so an explicit light stamp always wins. */
+/* Dark mode is built from the brand's own dark grounds — #111429 "BG Dark"
+   and #161A36 "Primary" — so it reads as the same company at night rather
+   than as a generic dark theme. The lime needs no adjustment on them: it
+   measures 7.62:1 on the dark ground. */
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) {
     color-scheme: dark;
-    --ink-1: #f5f5f7;
-    --ink-2: #a1a1a9;
-    --ink-3: #8a8a93;
-    --ink-4: #5e5e66;
-    --hairline: rgb(255 255 255 / 0.12);
-    --hairline-strong: rgb(255 255 255 / 0.2);
-    --surface-canvas: #0b0b0c;
-    --surface-sunken: #09090a;
-    --surface-raised: #141416;
-    --surface-overlay: #1c1c1f;
-    --surface-scrim: rgb(0 0 0 / 0.56);
-    --status-critical-text: #f0736a;  /* 6.90:1 on the dark canvas */
-    --accent: #3fbf84;
-    --accent-contrast: #0b0b0c;
-    --accent-wash: rgb(63 191 132 / 0.12);
+    --ink-1: #f9f7f5;
+    --ink-2: #a8acc4;
+    --ink-3: #7a7e99;   /* the brand's own "Text Light", 4.56:1 here */
+    --ink-4: #5c6080;
+    --hairline: rgb(168 172 196 / 0.18);
+    --hairline-strong: rgb(168 172 196 / 0.3);
+    --surface-canvas: #111429;
+    --surface-sunken: #0d1022;
+    --surface-raised: #161a36;
+    --surface-overlay: #1b2042;
+    --surface-scrim: rgb(9 11 24 / 0.64);
+    /* BrandTheme sets --brand-accent-dark per brand; the group lime is the
+       fallback so an unbranded brand still renders correctly. */
+    --accent: var(--brand-accent-dark, #7db903);
+    --accent-hover: #97dd09;
+    --accent-contrast: #111429;
+    --accent-text: var(--brand-accent-text-dark, #97dd09);  /* 10.95:1 here */
+    --accent-wash: rgb(125 185 3 / 0.16);
+    --status-critical-text: #f0736a;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-2: 0 4px 12px rgb(0 0 0 / 0.45);
+    --shadow-3: 0 16px 48px rgb(0 0 0 / 0.55);
     --series-1: #3987e5;
     --series-2: #d95926;
     --series-3: #199e70;
@@ -103,21 +128,26 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --ink-1: #f5f5f7;
-  --ink-2: #a1a1a9;
-  --ink-3: #8a8a93;
-  --ink-4: #5e5e66;
-  --hairline: rgb(255 255 255 / 0.12);
-  --hairline-strong: rgb(255 255 255 / 0.2);
-  --surface-canvas: #0b0b0c;
-  --surface-sunken: #09090a;
-  --surface-raised: #141416;
-  --surface-overlay: #1c1c1f;
-  --surface-scrim: rgb(0 0 0 / 0.56);
-  --status-critical-text: #f0736a;  /* 6.90:1 on the dark canvas */
-  --accent: #3fbf84;
-  --accent-contrast: #0b0b0c;
-  --accent-wash: rgb(63 191 132 / 0.12);
+  --ink-1: #f9f7f5;
+  --ink-2: #a8acc4;
+  --ink-3: #7a7e99;
+  --ink-4: #5c6080;
+  --hairline: rgb(168 172 196 / 0.18);
+  --hairline-strong: rgb(168 172 196 / 0.3);
+  --surface-canvas: #111429;
+  --surface-sunken: #0d1022;
+  --surface-raised: #161a36;
+  --surface-overlay: #1b2042;
+  --surface-scrim: rgb(9 11 24 / 0.64);
+  --accent: var(--brand-accent-dark, #7db903);
+  --accent-hover: #97dd09;
+  --accent-contrast: #111429;
+  --accent-text: var(--brand-accent-text-dark, #97dd09);
+  --accent-wash: rgb(125 185 3 / 0.16);
+  --status-critical-text: #f0736a;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-2: 0 4px 12px rgb(0 0 0 / 0.45);
+  --shadow-3: 0 16px 48px rgb(0 0 0 / 0.55);
   --series-1: #3987e5;
   --series-2: #d95926;
   --series-3: #199e70;

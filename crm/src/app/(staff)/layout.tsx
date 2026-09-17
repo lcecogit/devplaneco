@@ -31,14 +31,22 @@ export default async function StaffLayout({ children }: { children: React.ReactN
   // because a filter in application code would suggest the policy is optional.
   const { data: brands } = await supabase
     .from("brands")
-    .select("id, slug, code, name, accent_hex, accent_dark_hex")
+    .select(
+      "id, slug, code, name, accent_hex, accent_dark_hex, accent_text_hex, accent_text_dark_hex, accent_contrast_hex, brand_identity_confirmed",
+    )
     .order("name")
     .returns<BrandRow[]>();
 
   const brand = brands?.[0];
 
   return (
-    <BrandTheme accent={brand?.accent_hex ?? "#18794E"} accentDark={brand?.accent_dark_hex ?? "#3FBF84"}>
+    <BrandTheme
+      accent={brand?.accent_hex ?? "#7DB903"}
+      accentDark={brand?.accent_dark_hex ?? "#7DB903"}
+      accentText={brand?.accent_text_hex ?? "#235F2A"}
+      accentTextDark={brand?.accent_text_dark_hex ?? "#97DD09"}
+      accentContrast={brand?.accent_contrast_hex ?? "#161A36"}
+    >
       <div className="flex min-h-dvh">
         <aside className="hidden w-60 shrink-0 border-r border-hairline bg-surface-sunken md:block">
           <Sidebar items={NAV} brandName={brand?.name ?? "No brand access"} />

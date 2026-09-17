@@ -8,7 +8,7 @@ export default function NotFound() {
       </p>
       <a
         href="/dashboard"
-        className="mt-6 inline-flex h-11 items-center rounded-md bg-accent px-5 text-body font-medium text-accent-contrast transition-opacity duration-instant ease-standard hover:opacity-90"
+        className="mt-6 inline-flex h-11 items-center rounded-md bg-accent px-8 text-label font-medium uppercase tracking-[0.1em] text-accent-contrast transition-opacity duration-instant ease-standard hover:opacity-90"
       >
         Back to the dashboard
       </a>

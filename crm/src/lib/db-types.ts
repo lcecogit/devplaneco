@@ -16,6 +16,10 @@ export interface BrandRow {
   name: string;
   accent_hex: string;
   accent_dark_hex: string;
+  accent_text_hex: string | null;
+  accent_text_dark_hex: string | null;
+  accent_contrast_hex: string | null;
+  brand_identity_confirmed: boolean;
 }
 
 export interface LeadRow {

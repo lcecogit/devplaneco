@@ -112,3 +112,17 @@ select assert_eq(
     join sequences q on q.id = s.sequence_id
    where q.key = 'quote_chase' and s.step_order = 1),
   2880, 'the first quote chase fires at 48 hours');
+
+-- ── Brand identity ────────────────────────────────────────────────────────
+select assert_eq(
+  (select email_from from brands where slug = 'ecogreen-movers'),
+  'info@ecogreenmovers.co.uk', 'the flagship brand sends from its real address');
+select assert_eq(
+  (select accent_contrast_hex from brands where slug = 'ecogreen-movers'),
+  '#161A36', 'the label on the brand lime is navy, not white — white fails AA on it');
+select assert_eq(
+  (select count(*)::int from brands where brand_identity_confirmed),
+  2, 'only the two sites that are actually branded are marked confirmed');
+select assert_true(
+  (select bool_and(accent_text_hex is not null and accent_contrast_hex is not null) from brands),
+  'every brand carries a text step and a fill-contrast step, not just a fill');
