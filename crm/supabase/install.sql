@@ -1,32 +1,38 @@
 -- ============================================================================
 --  EcoGreen Group CRM — COMPLETE INSTALL
 --
---  One script. Run it once, top to bottom, in the Supabase SQL Editor.
+--  Run top to bottom. Safe to re-run: if an earlier attempt stopped part-way,
+--  running this again completes what is missing rather than failing.
 --
---  SAFE TO RE-RUN. Every object is guarded:
---    · types use an exception handler
---    · tables, indexes and constraints use IF NOT EXISTS
---    · functions use CREATE OR REPLACE
---    · triggers and policies are dropped before being created
---    · seed data only loads when the database is empty
---  So if an earlier attempt stopped part-way, running this simply completes it.
---
---  ORDER OF OPERATIONS — this is what earlier drafts got wrong:
---    1  extensions
---    2  private schema + helpers that need no tables   <- was too late before
---    3  all 24 enum types                              <- before any table
---    4  42 tables, in strict foreign-key order
---    5  indexes and constraints
---    6  triggers
---    7  helpers that read tables
---    8  row level security
---    9  server-side functions
---   10  seed data
---
---  IF THE PASTE KEEPS TRUNCATING: run it in two halves. Split at the line
---  that reads "-- PART 8: ROW LEVEL SECURITY". Both halves are re-runnable,
---  so there is no risk in splitting.
+--  Each of the five parts below is ALSO self-sufficient: every one creates the
+--  `private` schema if it is absent and checks its prerequisites first, so a
+--  part run on its own reports what to run rather than failing with a cryptic
+--  "schema private does not exist".
 -- ============================================================================
+
+
+
+-- ==========================================================================
+--  EcoGreen Group CRM — PART 1 — SCHEMA: extensions, enums, tables, indexes, triggers
+--
+--  Safe to re-run. Run the parts in order: 1, 2, 3, 4, 5.
+-- ==========================================================================
+
+-- ---------------------------------------------------------------------------
+-- Bootstrap. Present at the top of EVERY part so each one stands alone and no
+-- part can fail with "schema private does not exist".
+-- ---------------------------------------------------------------------------
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to authenticated;
+
+create or replace function private.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
 
 -- ---------------------------------------------------------------------------
 -- 1. Extensions
@@ -898,8 +904,44 @@ end $$;
 
 
 -- ==========================================================================
--- PART 7: REFERENCE NUMBERING, QUOTE FREEZING, AUDIT IMMUTABILITY
+--  EcoGreen Group CRM — PART 2 — INTEGRITY: references, quote freezing, audit immutability
+--
+--  Safe to re-run. Run the parts in order: 1, 2, 3, 4, 5.
 -- ==========================================================================
+
+-- ---------------------------------------------------------------------------
+-- Bootstrap. Present at the top of EVERY part so each one stands alone and no
+-- part can fail with "schema private does not exist".
+-- ---------------------------------------------------------------------------
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to authenticated;
+
+create or replace function private.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+-- Prerequisite check: a clear message beats a cryptic error.
+do $precheck$
+begin
+    if to_regclass('public.quotes') is null then
+      raise exception 'Run PART 1 (schema) first — table "quotes" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+    if to_regclass('public.audit_log') is null then
+      raise exception 'Run PART 1 (schema) first — table "audit_log" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+    if to_regclass('public.staff_brand_access') is null then
+      raise exception 'Run PART 1 (schema) first — table "staff_brand_access" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+end
+$precheck$;
 
 create or replace function next_reference(target_brand uuid, target_entity text, at timestamptz default now())
 returns text
@@ -1034,9 +1076,46 @@ create trigger staff_brand_access_guard
   for each row execute function private.guard_brand_access_change();
 
 
+
 -- ==========================================================================
--- PART 8: ROW LEVEL SECURITY
+--  EcoGreen Group CRM — PART 3 — SECURITY: helpers and row level security
+--
+--  Safe to re-run. Run the parts in order: 1, 2, 3, 4, 5.
 -- ==========================================================================
+
+-- ---------------------------------------------------------------------------
+-- Bootstrap. Present at the top of EVERY part so each one stands alone and no
+-- part can fail with "schema private does not exist".
+-- ---------------------------------------------------------------------------
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to authenticated;
+
+create or replace function private.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+-- Prerequisite check: a clear message beats a cryptic error.
+do $precheck$
+begin
+    if to_regclass('public.brands') is null then
+      raise exception 'Run PART 1 (schema) first — table "brands" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+    if to_regclass('public.staff') is null then
+      raise exception 'Run PART 1 (schema) first — table "staff" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+    if to_regclass('public.jobs') is null then
+      raise exception 'Run PART 1 (schema) first — table "jobs" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+end
+$precheck$;
 
 -- Role ranking, so a policy can say "manager or above" without listing roles.
 create or replace function private.role_rank(r public.brand_role)
@@ -1491,8 +1570,44 @@ revoke all on all tables in schema public from anon;
 
 
 -- ==========================================================================
--- PART 9: SERVER-SIDE FUNCTIONS
+--  EcoGreen Group CRM — PART 4 — FUNCTIONS: intake, booking, scheduler, job sheets, GDPR
+--
+--  Safe to re-run. Run the parts in order: 1, 2, 3, 4, 5.
 -- ==========================================================================
+
+-- ---------------------------------------------------------------------------
+-- Bootstrap. Present at the top of EVERY part so each one stands alone and no
+-- part can fail with "schema private does not exist".
+-- ---------------------------------------------------------------------------
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to authenticated;
+
+create or replace function private.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+-- Prerequisite check: a clear message beats a cryptic error.
+do $precheck$
+begin
+    if to_regclass('public.leads') is null then
+      raise exception 'Run PARTS 1-3 first — table "leads" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+    if to_regclass('public.quotes') is null then
+      raise exception 'Run PARTS 1-3 first — table "quotes" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+    if to_regclass('public.outbox') is null then
+      raise exception 'Run PARTS 1-3 first — table "outbox" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+end
+$precheck$;
 
 create or replace function create_intake_lead(
   p_brand_id uuid,
@@ -2131,9 +2246,46 @@ $$;
 revoke all on function erase_customer_data from public, anon, authenticated;
 
 
+
 -- ==========================================================================
--- PART 10: SEED DATA (first install only)
+--  EcoGreen Group CRM — PART 5 — SEED DATA: brands, catalogue, rate cards, sequences
+--
+--  Safe to re-run. Run the parts in order: 1, 2, 3, 4, 5.
 -- ==========================================================================
+
+-- ---------------------------------------------------------------------------
+-- Bootstrap. Present at the top of EVERY part so each one stands alone and no
+-- part can fail with "schema private does not exist".
+-- ---------------------------------------------------------------------------
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to authenticated;
+
+create or replace function private.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+-- Prerequisite check: a clear message beats a cryptic error.
+do $precheck$
+begin
+    if to_regclass('public.brands') is null then
+      raise exception 'Run PARTS 1-3 first — table "brands" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+    if to_regclass('public.rooms') is null then
+      raise exception 'Run PARTS 1-3 first — table "rooms" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+    if to_regclass('public.rate_cards') is null then
+      raise exception 'Run PARTS 1-3 first — table "rate_cards" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+end
+$precheck$;
 
 -- Guarded: if any brand already exists the whole block is skipped, so
 -- re-running this script never duplicates the catalogue or the rate cards.
@@ -2388,4 +2540,3 @@ update brands set
   accent_contrast_hex = '#161A36',
   brand_identity_confirmed = false
 where slug in ('eco-london-movers', 'continuum-green', 'removals-company-manchester', 'edinburgh-moving');
-

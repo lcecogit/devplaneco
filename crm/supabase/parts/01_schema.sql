@@ -1,14 +1,24 @@
--- ============================================================================
---  EcoGreen Group CRM — schema
---  Enum types, tables, indexes and constraints, in strict dependency order.
+-- ==========================================================================
+--  EcoGreen Group CRM — PART 1 — SCHEMA: extensions, enums, tables, indexes, triggers
 --
---  Safe to re-run. Every type is guarded, every table and index uses
---  IF NOT EXISTS, so running this against a database left half-built by a
---  failed attempt will complete it rather than error.
---
---  Paste the whole file into the Supabase SQL Editor and run it once.
---  RLS policies, functions and seed data are separate scripts that run after.
--- ============================================================================
+--  Safe to re-run. Run the parts in order: 1, 2, 3, 4, 5.
+-- ==========================================================================
+
+-- ---------------------------------------------------------------------------
+-- Bootstrap. Present at the top of EVERY part so each one stands alone and no
+-- part can fail with "schema private does not exist".
+-- ---------------------------------------------------------------------------
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to authenticated;
+
+create or replace function private.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
 
 -- ---------------------------------------------------------------------------
 -- 1. Extensions

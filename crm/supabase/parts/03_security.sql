@@ -1,20 +1,42 @@
--- ============================================================================
---  EcoGreen Group CRM — row level security
---  Run AFTER schema.sql. Safe to re-run: every policy is dropped before it is
---  created, and the helpers use CREATE OR REPLACE.
+-- ==========================================================================
+--  EcoGreen Group CRM — PART 3 — SECURITY: helpers and row level security
 --
---  Deny by default, everywhere. A table with RLS on and no matching policy
---  returns nothing, which is the correct failure mode: adding a table without
---  adding its policy is a bug that fails closed rather than leaking.
--- ============================================================================
+--  Safe to re-run. Run the parts in order: 1, 2, 3, 4, 5.
+-- ==========================================================================
 
--- The schema the helpers live in. Created here as well as in schema.sql so
--- this script stands alone: running it against a database where schema.sql
--- was applied is a no-op, and running it on its own does not fail on a
--- missing schema.
+-- ---------------------------------------------------------------------------
+-- Bootstrap. Present at the top of EVERY part so each one stands alone and no
+-- part can fail with "schema private does not exist".
+-- ---------------------------------------------------------------------------
 create schema if not exists private;
 revoke all on schema private from public;
 grant usage on schema private to authenticated;
+
+create or replace function private.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+-- Prerequisite check: a clear message beats a cryptic error.
+do $precheck$
+begin
+    if to_regclass('public.brands') is null then
+      raise exception 'Run PART 1 (schema) first — table "brands" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+    if to_regclass('public.staff') is null then
+      raise exception 'Run PART 1 (schema) first — table "staff" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+    if to_regclass('public.jobs') is null then
+      raise exception 'Run PART 1 (schema) first — table "jobs" does not exist.'
+        using errcode = 'undefined_table';
+    end if;
+end
+$precheck$;
 
 -- Role ranking, so a policy can say "manager or above" without listing roles.
 create or replace function private.role_rank(r public.brand_role)
