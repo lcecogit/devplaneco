@@ -964,6 +964,12 @@ begin
 end;
 $$;
 
+-- next_reference writes to reference_sequences and is security definer, so an
+-- EXECUTE grant would let anon burn reference numbers for any brand via
+-- /rest/v1/rpc/next_reference. Nothing needs it over the API: its callers are
+-- themselves security definer and run as the owner.
+revoke all on function next_reference(uuid, text, timestamptz) from public, anon, authenticated;
+
 
 create or replace function private.reject_sent_quote_change()
 returns trigger
@@ -1736,11 +1742,26 @@ declare
   v_job_id uuid;
   v_job_reference text;
   v_invoice_id uuid;
+  v_actor uuid := p_actor_staff_id;
 begin
   select * into v_quote from public.quotes where id = p_quote_id for update;
   if not found then
     raise exception 'Quote % not found', p_quote_id using errcode = 'no_data_found';
   end if;
+
+  -- Security definer means RLS does not apply inside this function, so it must
+  -- authorise its own caller: otherwise any staff session could book a quote in
+  -- any brand by knowing its uuid, and attribute it to anyone. The gate is
+  -- auth.uid(): a user session always has one, the service role does not, so
+  -- the server routes and the cron dispatcher are unaffected.
+  if auth.uid() is not null then
+    if not private.has_brand_access(v_quote.brand_id, 'sales') then
+      raise exception 'Not permitted to book quotes for this brand'
+        using errcode = 'insufficient_privilege';
+    end if;
+    v_actor := private.current_staff_id();
+  end if;
+
   if v_quote.status not in ('sent','viewed','accepted') then
     raise exception 'Quote % is %, so it cannot be booked', p_quote_id, v_quote.status
       using errcode = 'invalid_parameter_value';
@@ -1794,7 +1815,7 @@ begin
    where id = v_quote.lead_id;
 
   insert into public.lead_events (lead_id, type, actor_staff_id, payload)
-  values (v_quote.lead_id, 'booked', p_actor_staff_id,
+  values (v_quote.lead_id, 'booked', v_actor,
           jsonb_build_object('quote_id', p_quote_id, 'job_id', v_job_id, 'invoice_id', v_invoice_id));
 
   -- Stop every live sequence for this lead and quote. A customer who has just
@@ -1816,7 +1837,7 @@ begin
      );
 
   insert into public.audit_log (actor_staff_id, brand_id, action, entity_type, entity_id, after)
-  values (p_actor_staff_id, v_quote.brand_id, 'quote.booked', 'quote', p_quote_id,
+  values (v_actor, v_quote.brand_id, 'quote.booked', 'quote', p_quote_id,
           jsonb_build_object('job_id', v_job_id, 'invoice_id', v_invoice_id));
 
   return query select v_job_id, v_job_reference, v_invoice_id;
@@ -2027,6 +2048,11 @@ declare
   v_sequence_id uuid;
   v_enrolment_id uuid;
 begin
+  if auth.uid() is not null and not private.has_brand_access(p_brand_id, 'sales') then
+    raise exception 'Not permitted to enrol subjects for this brand'
+      using errcode = 'insufficient_privilege';
+  end if;
+
   select s.id into v_sequence_id
   from public.sequences s
   where s.key = p_sequence_key and s.is_active
@@ -2062,7 +2088,24 @@ as $$
 declare
   v_sheet_id uuid;
   v_snapshot jsonb;
+  v_brand uuid;
+  v_actor uuid := p_actor_staff_id;
 begin
+  select j.brand_id into v_brand from public.jobs j where j.id = p_job_id;
+  if v_brand is null then
+    raise exception 'Job % not found', p_job_id using errcode = 'no_data_found';
+  end if;
+
+  -- A job sheet carries the customer's name, phone and full inventory. Ops and
+  -- above for the brand, or the crew actually assigned to that job.
+  if auth.uid() is not null then
+    if not (private.has_brand_access(v_brand, 'ops') or private.is_assigned_to_job(p_job_id)) then
+      raise exception 'Not permitted to generate a job sheet for this job'
+        using errcode = 'insufficient_privilege';
+    end if;
+    v_actor := private.current_staff_id();
+  end if;
+
   select jsonb_build_object(
     'generated_at', now(),
     'job', jsonb_build_object(
@@ -2123,7 +2166,7 @@ begin
   end if;
 
   insert into public.job_sheets (job_id, generated_by_staff_id, snapshot)
-  values (p_job_id, p_actor_staff_id, v_snapshot)
+  values (p_job_id, v_actor, v_snapshot)
   returning id into v_sheet_id;
 
   return v_sheet_id;

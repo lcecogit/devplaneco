@@ -68,6 +68,12 @@ begin
 end;
 $$;
 
+-- next_reference writes to reference_sequences and is security definer, so an
+-- EXECUTE grant would let anon burn reference numbers for any brand via
+-- /rest/v1/rpc/next_reference. Nothing needs it over the API: its callers are
+-- themselves security definer and run as the owner.
+revoke all on function next_reference(uuid, text, timestamptz) from public, anon, authenticated;
+
 
 create or replace function private.reject_sent_quote_change()
 returns trigger
