@@ -2051,3 +2051,34 @@ Each step asserted its outcome rather than just running: the invoice total had
 to equal the quote, the job sheet had to name its own job, erasure had to
 report the financial record retained, and the two guards (frozen pricing after
 send, one job per quote) had to actually refuse.
+
+## Session — rate cards become editable and signable
+
+`RECOMMENDATIONS.md` §6 puts the pricing matrix first, and the 36 seeded cards
+were all `provisional = true` with no way to change or sign them off — the one
+thing blocking real customer quotes.
+
+- `/rate-cards/[id]` edits all seven components as fields, in pounds, stored as
+  integer minor units. No raw JSON: the person signing a commercial document
+  should not have to read a brace to find the minimum charge.
+- Two guards before any write, with tests: volume band bounds must strictly
+  increase, and a later band may not cost more per ft³ than an earlier one. The
+  second prevents a bigger move costing more per cubic foot, which is a pricing
+  error rather than a policy and only surfaces in an angry phone call.
+- Confirming rates is a separate action from saving, because it is the moment
+  invented numbers become the business's own and the PROVISIONAL watermark
+  leaves customer quotes. Reversible.
+- Every write checks affected rows. An RLS denial on UPDATE is a silent no-op,
+  not an error — verified again here: a sales session's update returned 0 rows
+  and no exception. Without the check the UI would report "Saved" to someone
+  who changed nothing.
+
+Verified against the live database by impersonating each account as the
+`authenticated` role, so RLS actually applied, then rolled back:
+
+    owner(admin)      ecogreen=1  glasgow=1
+    manager(manager)  ecogreen=1  glasgow=0
+    accounts/ops/sales/crew/viewer          0
+
+Only manager and above can confirm rates, and a manager is confined to their
+own brand. 84 tests pass, lint and build clean, 36 cards still provisional.

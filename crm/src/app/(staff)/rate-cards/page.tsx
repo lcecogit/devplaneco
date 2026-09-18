@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Panel, PanelHeader } from "@/components/ui/Surface";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -153,6 +155,13 @@ function RateCardPanel({ card }: { card: RateCardRow }) {
           value={`Value over ${formatMoneyMinor(r.manualPricing?.declaredValueOverMinor ?? 0, card.currency)} · volume over ${(r.manualPricing?.volumeOverFt3 ?? 0).toLocaleString("en-GB")} ft³ · distance over ${r.manualPricing?.distanceOverMiles ?? 0} miles`}
         />
       </dl>
+
+      <Link
+        href={`/rate-cards/${card.id}`}
+        className="mt-5 inline-flex h-9 items-center border border-hairline px-5 text-caption font-medium uppercase tracking-[0.1em] text-ink-1 transition-colors duration-instant ease-standard hover:bg-surface-sunken"
+      >
+        {card.provisional ? "Review and sign off" : "Edit"}
+      </Link>
     </Panel>
   );
 }

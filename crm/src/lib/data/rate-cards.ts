@@ -54,7 +54,11 @@ export async function getRateCards(): Promise<RateCardRow[]> {
 
   if (error) throw new Error(`Could not load rate cards: ${error.message}`);
 
-  return (data ?? []).map((row: any): RateCardRow => ({
+  return (data ?? []).map(toRow);
+}
+
+function toRow(row: any): RateCardRow {
+  return {
     id: row.id,
     brand: row.brands?.name ?? "—",
     brandSlug: row.brands?.slug ?? "",
@@ -64,12 +68,28 @@ export async function getRateCards(): Promise<RateCardRow[]> {
     effectiveTo: row.effective_to,
     provisional: row.provisional,
     rules: row.rules as RateCardRules,
-  }));
+  };
 }
 
 /** Sample rows for when no database is connected, built from the same domain
  *  defaults the seed was generated from, so the screen shows the real structure
  *  either way. */
+export async function getRateCard(id: string): Promise<RateCardRow | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("rate_cards")
+    .select(
+      `id, service_category, currency, effective_from, effective_to, provisional, rules,
+       brands ( name, slug )`,
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new Error(`Could not load the rate card: ${error.message}`);
+  if (!data) return null;
+  return toRow(data);
+}
+
 export function sampleRateCards(): RateCardRow[] {
   const categories: ServiceCategory[] = [
     "residential", "commercial", "office", "specialist", "clearance", "storage",
