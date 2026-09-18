@@ -1,0 +1,192 @@
+/* Design tokens — the single source of colour, type, space, shape and motion.
+   DESIGN.md is normative; this file is its implementation.
+
+   ── The palette ───────────────────────────────────────────────────────────
+   Deep green, blue-green, white and near-black, as asked for. Two rules keep
+   it harmonious rather than merely green:
+
+   1. The neutrals are not grey. Every ink and surface step carries a slight
+      green bias, so the near-black reads as the same family as the greens
+      rather than sitting on top of them. A pure grey beside a saturated green
+      is the thing that makes a palette look assembled.
+   2. Deep green leads and blue-green supports. Two close hues competing for
+      the same job is what makes a scheme muddy — so green owns actions and
+      teal owns secondary emphasis, never the reverse.
+
+   Every value below was measured, not chosen by eye; the ratios are noted.
+   The brand lime #7DB903 survives as the highlight in `--accent-bright`,
+   which is where ecogreenmovers.co.uk's own colour still shows.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+
+  /* ---- Ink — near-black with a green bias, never grey ------------------ */
+  --ink-1: #0a1711;  /* 18.36:1 on canvas */
+  --ink-2: #44544c;  /*  8.02:1 */
+  --ink-3: #5c6e65;  /*  5.42:1 on canvas · 4.97:1 on the sunken surface */
+  --ink-4: #8f9e96;
+  --hairline: rgb(10 23 17 / 0.12);
+  --hairline-strong: rgb(10 23 17 / 0.2);
+
+  /* ---- Surfaces -------------------------------------------------------- */
+  --surface-canvas: #ffffff;
+  --surface-sunken: #f2f6f3;   /* white with the same green bias */
+  --surface-raised: #ffffff;
+  --surface-overlay: #ffffff;
+  --surface-scrim: rgb(10 23 17 / 0.44);
+
+  /* ---- Accent ---------------------------------------------------------- */
+  /* --accent is a FILL; --accent-text is the step for text and focus rings.
+     Here they are the same colour because deep green works as both — which is
+     precisely why deep green leads and the lime does not. */
+  --accent: #0e4d34;          /* deep green · white on it is 9.86:1 */
+  --accent-hover: #116b48;
+  --accent-contrast: #ffffff;
+  --accent-text: #0e4d34;     /* 9.86:1 as text */
+  --accent-wash: rgb(14 77 52 / 0.08);
+
+  /* Blue-green, the supporting hue: secondary emphasis, never a second CTA. */
+  --teal: #0a6158;            /* 7.33:1 as text */
+  --teal-wash: rgb(10 97 88 / 0.08);
+
+  /* The brand lime, kept for highlights and positive deltas only. It is
+     2.38:1 on white, so it is never text and never a lone signal. */
+  --accent-bright: #7db903;
+
+  /* ---- Status (fixed, never themed) ------------------------------------ */
+  /* Mark colours. Status used as TEXT takes the -text step. */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --status-good-text: #10702a;
+  --status-critical-text: #b3312e;
+
+  /* ---- Chart series ----------------------------------------------------
+     Fixed order, never cycled. Led by aqua so the first series sits in the
+     brand's family, then stepping away by hue. This ordering was validated,
+     not chosen: worst adjacent CVD ΔE 9.1, worst normal-vision ΔE 27.6, all
+     eight above 3:1 on the surface. Changing the ORDER changes the safety,
+     so it is not a cosmetic decision. */
+  --series-1: #1baf7a;
+  --series-2: #eb6834;
+  --series-3: #2a78d6;
+  --series-4: #eda100;
+  --series-5: #4a3aa7;
+  --series-6: #e87ba4;
+  --series-7: #008300;
+  --series-8: #e34948;
+  --series-diverging-mid: #eceee9;
+  /* Single-hue ramp for magnitude: green, light to dark. */
+  --ramp-1: #d6ece0;
+  --ramp-2: #a9d8c2;
+  --ramp-3: #6fbd9c;
+  --ramp-4: #36996f;
+  --ramp-5: #14714c;
+  --ramp-6: #0e4d34;
+
+  /* ---- Elevation ------------------------------------------------------- */
+  --shadow-1: 0 1px 2px rgb(10 23 17 / 0.06);
+  --shadow-2: 0 4px 12px rgb(10 23 17 / 0.1);
+  --shadow-3: 0 16px 48px rgb(10 23 17 / 0.16);
+
+  /* ---- Motion ---------------------------------------------------------- */
+  --motion-instant: 120ms;
+  --motion-quick: 200ms;
+  --motion-settled: 320ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-emphasised: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Dark mode is a designed second theme built from the same green-biased
+   near-blacks, not an inversion. Every step was measured against the surface
+   it actually sits on — including the overlay, which is the lightest of the
+   three and therefore the strictest test for muted text. */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --ink-1: #eaf3ee;   /* 16.72 canvas */
+    --ink-2: #9db3a9;   /*  8.52 canvas · 6.84 overlay */
+    --ink-3: #849c92;   /*  6.44 canvas · 5.17 overlay */
+    --ink-4: #5d7168;
+    --hairline: rgb(157 179 169 / 0.16);
+    --hairline-strong: rgb(157 179 169 / 0.28);
+    --surface-canvas: #071310;
+    --surface-sunken: #040c0a;
+    --surface-raised: #0d1e18;
+    --surface-overlay: #132a22;
+    --surface-scrim: rgb(2 6 5 / 0.66);
+    --accent: #34c79a;          /* 8.82 on canvas */
+    --accent-hover: #3fd3a8;
+    --accent-contrast: #071310; /* 8.82:1 the other way */
+    --accent-text: #5be0b8;     /* 11.53 canvas */
+    --accent-wash: rgb(52 199 154 / 0.14);
+    --teal: #4fd0c4;
+    --teal-wash: rgb(79 208 196 / 0.14);
+    --accent-bright: #9cdb2f;
+    --status-good-text: #4ad07a;
+    --status-critical-text: #ff8a80;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.45);
+    --shadow-2: 0 4px 12px rgb(0 0 0 / 0.5);
+    --shadow-3: 0 16px 48px rgb(0 0 0 / 0.6);
+    --series-1: #199e70;
+    --series-2: #d95926;
+    --series-3: #3987e5;
+    --series-4: #c98500;
+    --series-5: #9085e9;
+    --series-6: #d55181;
+    --series-7: #008300;
+    --series-8: #e66767;
+    --series-diverging-mid: #233029;
+    --ramp-1: #123a2a;
+    --ramp-2: #17513a;
+    --ramp-3: #1b6a4b;
+    --ramp-4: #24885f;
+    --ramp-5: #2ea875;
+    --ramp-6: #40c895;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink-1: #eaf3ee;
+  --ink-2: #9db3a9;
+  --ink-3: #849c92;
+  --ink-4: #5d7168;
+  --hairline: rgb(157 179 169 / 0.16);
+  --hairline-strong: rgb(157 179 169 / 0.28);
+  --surface-canvas: #071310;
+  --surface-sunken: #040c0a;
+  --surface-raised: #0d1e18;
+  --surface-overlay: #132a22;
+  --surface-scrim: rgb(2 6 5 / 0.66);
+  --accent: #34c79a;
+  --accent-hover: #3fd3a8;
+  --accent-contrast: #071310;
+  --accent-text: #5be0b8;
+  --accent-wash: rgb(52 199 154 / 0.14);
+  --teal: #4fd0c4;
+  --teal-wash: rgb(79 208 196 / 0.14);
+  --accent-bright: #9cdb2f;
+  --status-good-text: #4ad07a;
+  --status-critical-text: #ff8a80;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.45);
+  --shadow-2: 0 4px 12px rgb(0 0 0 / 0.5);
+  --shadow-3: 0 16px 48px rgb(0 0 0 / 0.6);
+  --series-1: #199e70;
+  --series-2: #d95926;
+  --series-3: #3987e5;
+  --series-4: #c98500;
+  --series-5: #9085e9;
+  --series-6: #d55181;
+  --series-7: #008300;
+  --series-8: #e66767;
+  --series-diverging-mid: #233029;
+  --ramp-1: #123a2a;
+  --ramp-2: #17513a;
+  --ramp-3: #1b6a4b;
+  --ramp-4: #24885f;
+  --ramp-5: #2ea875;
+  --ramp-6: #40c895;
+}

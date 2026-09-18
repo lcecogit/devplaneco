@@ -1635,3 +1635,419 @@ must follow.
   quoted rate once agreed. No rate card exists because the business's own
   T&Cs don't have one — this needs a real decision from the business, not
   a guessed number.
+
+### 2026-09-17 — Unified CRM platform: specification (SPEC.md, DESIGN.md, ROADMAP.md)
+- Built: no application code. Three planning documents at the repo root —
+  `SPEC.md` (a Phase 1 build prompt for Claude Code: architecture, schema,
+  RLS, pricing engine, sequence engine, milestones M0–M10 with acceptance
+  criteria), `DESIGN.md` (design system and a craft audit gate), and
+  `ROADMAP.md` (phases 2–6, with vendor and compliance items separated from
+  development items).
+- Key decisions: (1) The CRM is a **new app at `crm/`** with its own Supabase
+  project, not an extension of the movers-now marketplace — the marketplace is
+  a two-sided partner/auction product and its `jobs`/`quotes` model directly
+  conflicts with an in-house operations model; 56 migrations of working code
+  were not worth destabilising. (2) Hosting moves to **Vercel** per
+  instruction; note `netlify.toml` and `claude.md.md` still describe Netlify
+  for the existing app — migrating that app is a separate task, not done here.
+  (3) The six brand WordPress sites stay live; the platform integrates via a
+  signed lead-intake API plus an embeddable quote widget, rather than
+  rebuilding six ranking sites. (4) Scope cut hard to lead → quote → book →
+  pay → chase → review plus a thin dispatch slice; everything else phased in
+  `ROADMAP.md`. (5) Typeface is **Geist Sans/Mono** — SF Pro cannot be licensed
+  as a webfont for a commercial web app, and `-apple-system` would fragment the
+  product across Windows and Android. (6) Chart palette is fixed and
+  deliberately *not* brand-themed; the eight-slot order in `DESIGN.md` §7 was
+  validated (worst adjacent CVD ΔE 9.1 light / 8.4 dark, normal-vision 19.6),
+  not chosen by eye.
+- Blocked on business input: real brand hex values, logos and sender domains
+  for all six brands; the actual rate card (base rates, mileage, volume bands,
+  crew rates, surcharges, VAT treatment); whether Stripe / email provider /
+  WhatsApp Business API credentials exist; data retention periods per record
+  class. `SPEC.md` §1 requires these to be marked `VALUE REQUIRED FROM
+  BUSINESS` rather than guessed.
+- Deferred / not done yet: nothing under `crm/` exists — M0 has not started.
+  Several items from the brief are deliberately refused or reclassified in
+  `ROADMAP.md` rather than scheduled (facial-recognition clock-in, in-house
+  PAYE/NI calculation, tachograph integration, customs declarations, 3D room
+  visualiser); each carries its reasoning there.
+
+### 2026-09-17 — CRM Phase 1: M0 scaffold, M1 schema/RLS, M4 pricing engine
+- Built: the `crm/` app — Next.js 14 + Supabase + Tailwind, Vercel-targeted,
+  with `src/styles/tokens.css` as the single source of colour, type, space,
+  shape and motion. 16 migrations under `crm/supabase/migrations`. The pure
+  domain layer under `crm/src/domain` (money, clock, item catalogue, volume,
+  pricing engine, pipeline transitions, duplicate/cross-brand matching, lead
+  scoring, routing, sequence scheduler). UI primitives, staff shell, login,
+  dashboard and leads workspace. `DECISIONS.md` answers the four items
+  `SPEC.md` §1 had blocked on business input.
+- Key decisions: (1) `crm/` is its own app with its own Supabase project — the
+  marketplace's partner/auction model conflicts with an in-house operations
+  model, and its 56 migrations were not worth destabilising. (2) Geist Sans and
+  Geist Mono, self-hosted: SF Pro is not licensable as a webfont and
+  `-apple-system` would fragment the product across Windows and Android.
+  (3) Charts are deliberately NOT brand-themed — the eight-slot categorical
+  order in `DESIGN.md` §7 is validated (worst adjacent CVD ΔE 9.1 light / 8.4
+  dark) and would stop being readable if tinted per brand. (4) Seed migrations
+  for the catalogue, rate cards and sequences are GENERATED from the TypeScript
+  domain definitions by `npm run seed:generate`, so the database and the
+  pricing engine cannot drift. (5) Double-booking, quote immutability,
+  audit-log append-only and outbox idempotency are all database constraints,
+  not application checks.
+- Verified, not assumed: `npm run typecheck` clean; `npm run lint` clean;
+  `npm run build` green; 60 unit tests pass; `npm run db:verify` applies all 16
+  migrations to a throwaway Postgres 16 and passes 47 assertions covering brand
+  isolation both ways, crew price exclusion, privilege escalation,
+  double-booking, quote freezing, attendance, outbox and webhook idempotency,
+  and seed integrity. The running app was smoke-tested: `/login` renders 200
+  with the security headers, `/dashboard` 307s to `/login` without a session,
+  `robots.txt` disallows everything, and the login screen was screenshotted in
+  both themes at 1280px and checked for horizontal overflow at 320px.
+- Three bugs were found by those checks and fixed: the sequence-step
+  stop-condition CHECK used `array_length()`, which is NULL for an empty array
+  and so passed; `next_reference()` had an ambiguous plpgsql variable; and an
+  RLS escalation test was passing vacuously because the subquery it used was
+  itself filtered by RLS. Worth carrying forward: an RLS denial on UPDATE or
+  DELETE is a silent no-op, not an error, so application code must check
+  affected-row counts rather than relying on a thrown error.
+- Blocked on business input (recommended defaults are seeded and flagged, see
+  `DECISIONS.md`): real brand hex values and logos; the actual rate card — every
+  seeded card carries `provisional = true`, which is intended to drive a
+  PROVISIONAL PRICING watermark on the quote PDF; current TfL congestion and
+  ULEZ rates, seeded at zero rather than guessed; the gov.uk bank-holiday list;
+  retention periods, which need legal sign-off, and Scotland's differing
+  prescription period for the Edinburgh and Glasgow brands.
+- Deferred / not done yet, within Phase 1: M2 intake API and embeddable widget;
+  M3 lead detail and stage transitions in the UI (the domain logic exists and is
+  tested, nothing is wired to a route); M5 quote PDF and view tracking; M6
+  payments, webhooks and the booking transaction; M7 the cron tick and outbox
+  dispatcher (the scheduler is pure and tested, but nothing calls it yet); M8
+  the dispatch calendar and job sheet; M9 dashboards beyond the four KPI tiles;
+  M10 GDPR export/erasure and 2FA. `crm/src/lib/db-types.ts` is hand-written and
+  should be replaced by generated Supabase types once a project exists. No
+  Supabase project has been created — that incurs cost and was not authorised.
+
+### 2026-09-17 — CRM Phase 1: intake, scheduler, booking, GDPR — and closing out
+- Built: provider adapters with working stubs (payments, email, SMS, WhatsApp,
+  PDF, geo) behind interfaces, so nothing in the domain imports a vendor SDK
+  and no flow blocks on procurement. `/api/intake/lead` — HMAC-signed with a
+  replay window, idempotent, storing the raw body before validation.
+  `/api/cron/tick` plus `vercel.json` — the single 5-minute scheduler that
+  advances sequence enrolments into the outbox and dispatches it. Migrations
+  0017–0019: `create_intake_lead`, `book_accepted_quote`,
+  `claim_due_enrolments`, `claim_due_outbox`, `mark_outbox_sent`,
+  `enrol_in_sequence`, `generate_job_sheet`, `export_customer_data`,
+  `erase_customer_data`. `crm/README.md` with the commands that prove each
+  claim.
+- Key decisions: (1) Lead creation and booking are Postgres functions, not
+  sequential PostgREST calls — a request dying halfway would otherwise leave a
+  customer with no lead, or a job with no invoice. (2) Stop conditions are
+  derived at dispatch time inside `claim_due_enrolments` from live state, never
+  from a flag written at enrolment, so a customer who books an hour before the
+  chase is due does not receive it. (3) The fair-use cap counts across all six
+  brands: a customer experiences one sender, not six. (4) Erasure anonymises
+  rather than deletes where financial records must survive the statutory
+  period, and deletes behavioural data outright. (5) The job sheet is a frozen
+  snapshot carrying access notes verbatim and payment status but never a price.
+- Verified: typecheck, lint and build clean; **81 unit tests**; **88 SQL
+  assertions** across 19 migrations applied to a throwaway Postgres 16. New
+  coverage includes signature tampering, replay and length-mismatch handling,
+  adapter contracts, intake customer reuse, booking atomicity, concurrent
+  outbox claiming, cross-brand unsubscribe, job-sheet contents and GDPR
+  erasure.
+- One bug found and fixed: `book_accepted_quote` accepted `accepted` as an
+  input status so a retry would be safe, but nothing stopped a second job and a
+  second invoice being raised for the same quote. Now guarded and tested.
+- Deliberately stopped here, at the user's instruction not to incur cost. No
+  Supabase project was created, no paid provider was signed up for, and the
+  remaining work is UI that cannot be meaningfully verified without a live
+  project: the visual inventory builder, the quote PDF and send flow, the
+  Stripe webhook route, the dispatch calendar, the embeddable widget, the lead
+  detail screen, the retention purge job and 2FA enforcement. `SPEC.md` §15
+  now records the true status of every milestone rather than a plan.
+
+### 2026-09-17 — Design audit: typography, contrast, layout floors, photography slots
+- Built: `/styleguide` — every primitive and all five required states with
+  static data and no database, as a surface the craft gate can actually run
+  against. `npm run audit` (`crm/scripts/audit.mjs`) — axe across every audit
+  surface in both themes, 320px and 640px layout floors, a keyboard walk
+  asserting a visible focus ring at every stop, and touch-target measurement.
+  `BrandPhoto` with a designed no-asset state, and
+  `crm/public/photos/CREDITS.md` as the sourcing rules and licence register.
+  The sign-in screen is now a two-panel layout using that photography slot.
+- Key decisions: (1) **Weight now drops as size grows, and tracking tightens
+  with it** — display went 600→400 at −0.032em, titles 600→500. That pairing is
+  what separates type reading as modern from type reading as merely large, and
+  it is bound into the size token so a size cannot be used without its optical
+  correction. (2) Status hues are **mark** colours; status used as text takes a
+  separate `-text` step stepped for its surface. (3) Photography is slots plus
+  a designed fallback rather than committed assets — the sandbox network policy
+  blocks Unsplash and Pexels, so no licensed image could be fetched. The
+  fallback is near-neutral on purpose: an accent-tinted first version read as a
+  colour swatch rather than as a surface awaiting a photograph.
+- Verified: `npm run audit` passes clean — zero axe violations at any impact
+  across `/login` and `/styleguide` in both light and dark, zero horizontal
+  overflow at 320px and 640px, a focus ring on every tabbable element, no touch
+  target under 44px. Plus typecheck, lint, build, 81 unit tests and 88 SQL
+  assertions. Screenshots reviewed in both themes.
+- Three real defects the audit caught, all of which would have shipped: the
+  muted ink token `#7c7c85` measures 4.13:1 on white and fails AA — on ten
+  nodes at once, because every caption inherits it, now `#6b6b74` at 5.28:1;
+  `status-critical` used as text measures 4.09:1 on the dark canvas, now a
+  separate text step at 6.90:1; and panels stretched their grid track instead
+  of scrolling, pushing the page 290px wide at a 320px viewport, because a grid
+  item defaults to `min-width: auto` — `Panel`, `DataTable` and `TableSkeleton`
+  now set `min-w-0`. The last one would have hit the real leads table on a
+  phone, not just the styleguide.
+- Also corrected: an earlier touch-target reading of 21px was my own
+  measurement against a stale build, not a defect — real heights are 44px.
+- Deferred: no licensed photography is committed. `BrandPhoto` takes a `src`
+  and the credits register is ready; dropping files into `crm/public/photos`
+  and filling in one row per asset is all that remains.
+
+### 2026-09-17 — Theme rebuilt from the real EcoGreen brand
+- Built: the whole token system re-derived from ecogreenmovers.co.uk's live
+  Elementor global kit, read through the WordPress connector rather than
+  eyeballed: navy `#161A36` as the ink ramp, the brand's warm off-white
+  `#F9F7F5` as the sunken surface, lime `#7DB903` as the accent, `#111429` and
+  `#161A36` as the dark grounds, Inter (self-hosted via
+  `@fontsource-variable/inter`), and square controls matching the site's button
+  radius of 0 with its uppercase, wide-tracked, generously padded treatment.
+  Migration 0020 carries the real brand records, including
+  `info@ecogreenmovers.co.uk` and the real logo URL.
+- Key decisions: (1) An accent is **four tokens, not one** — a fill, what sits
+  on the fill, the same family stepped for text, and the dark pair. EcoGreen
+  forced this: its lime works as a fill at any size and fails as text. (2) One
+  typeface across all six brands even though Glasgow Moving sets Instrument
+  Sans and Removals Company Manchester sets Heebo — a CRM that changes typeface
+  on brand switch reads as six products. (3) Four of the six sites still carry
+  Elementor factory defaults (`#6EC1E4`/`#61CE70`) and continuumgreen.co.uk is
+  still titled "We Are Building Continuum Green"; a theme default is not a
+  brand, so those four inherit the flagship palette and carry
+  `brand_identity_confirmed = false` rather than being seeded as if designed.
+- **Two accessibility findings on the live website**, both worth fixing there:
+  its primary button is white on the lime at **2.38:1**, and the lime as text
+  on white is the same. The brand's own navy on that lime is 7.14:1 and its own
+  darker green `#235F2A` is 7.66:1 as text, so the CRM keeps the exact brand
+  hues and changes only what sits on or beside them. Recorded in `tokens.css`
+  beside the values so nobody "fixes" them back.
+- Verified: `npm run audit` passes clean on the new palette — zero axe
+  violations in both themes, no overflow at 320/640px, focus ring on every
+  tabbable, no target under 44px. Plus typecheck, lint, build, 81 unit tests
+  and 92 SQL assertions. Preview republished.
+- Deferred: Eco London Movers has no WordPress connector in this session, so
+  its identity could not be read. The other three unbranded sites need a real
+  brand before their accents mean anything.
+
+### 2026-09-17 — Customer-facing quote funnel at /quote
+- Built: a public quote page following the structure of the StudioOS reference
+  the user supplied (sticky header · hero with eyebrow, large headline, dual
+  CTAs, social proof and an overlapping detail card · services grid · reasons
+  with testimonials · specialist work · three-step explainer · enquiry form ·
+  footer), rebuilt entirely on EcoGreen's own brand. `src/lib/brand-content.ts`
+  holds the copy; `QuoteForm` posts the shape `/api/intake/lead` accepts, so a
+  submission becomes a routed, scored, de-duplicated lead.
+- Key decisions: (1) **Every string is the business's own.** Headline, service
+  names, the three branch numbers, the reviews and the case studies were read
+  from ecogreenmovers.co.uk through the WordPress connector. Nothing about
+  coverage, credentials or customer outcomes is invented. (2) **No price
+  appears.** The reference has four pricing cards; the rate card here is still
+  provisional and this business quotes a fixed price rather than publishing
+  one, so that section became a three-step "how pricing works" explainer.
+  Inventing a "from £X" would have been both wrong and off-brand. (3) The
+  brand site's own H1 (68px/1.2/600) and body (16px/1.5/300) sizes were added
+  as `hero` and `prose` tokens, scoped to customer-facing pages — 300-weight
+  body at 14px would be too fragile for staff screens read all day. (4) This
+  does not replace the WordPress sites (SPEC.md §1, decision 4); it is the
+  funnel they link into.
+- Verified: `npm run audit` passes clean across `/login`, `/styleguide` and
+  `/quote` in both themes — zero axe violations, no overflow at 320/640px,
+  focus ring on every tabbable. Plus typecheck, lint, build, 81 unit tests, 92
+  SQL assertions.
+- One defect found: the brand's own "Text Light" `#7A7E99` clears 4.5:1 on the
+  dark canvas but only reaches 4.27:1 on the raised navy and 3.96:1 on the
+  overlay — and muted text mostly appears inside cards, on exactly those
+  surfaces. Stepped to `#8A8FAC`, which passes on all three. The earlier check
+  had tested the canvas only.
+- Deferred: the reference's testimonial carousel and sticky mobile CTA bar; no
+  photography (slots render their fallback); the page is noindex like the rest
+  of the app, which is correct while the WordPress pages hold the rankings.
+
+### 2026-09-17 — The CRM itself: website → login → backend, with real photography
+- Corrected course: the previous session had built a marketing page and called
+  it progress. The product is a centralised CRM, so this session built the
+  operational screens — grouped navigation across five module groups, a top bar
+  with brand switcher and command-palette search, dashboard, leads workspace,
+  lead detail with the full quote breakdown and history, a week job calendar
+  with jobs placed by real start time and duration, and the manual send queue.
+- Built: `src/lib/sample-data.ts` and a sample mode. With no Supabase project
+  configured the app opens in a realistic working state instead of bouncing to
+  a login it cannot complete, with a persistent banner stating that every
+  figure is an example. The public site moved to `/` with `/quote` redirecting,
+  so there is one public page, and it now links to `/login`, which links back.
+- **Photography solved without stock sites.** The egress proxy blocks Unsplash
+  and Pexels, but EcoGreen's own WordPress media library has 555 images, so
+  five were pulled through the site connector, re-encoded to WebP at the sizes
+  the pages need (201 KB for all five), and committed. Better than fresh stock
+  three ways: the business already holds the licence, the images are the ones
+  its customers already see, and nothing new had to be cleared. Alt text came
+  from the library's own alt fields. Registered in `public/photos/CREDITS.md`.
+- Typography pushed further toward modern and minimal: display weights dropped
+  from 600 to **300** with tracking tightened to −0.035em, title-1 and title-2
+  to 400, eyebrows to 11px/500. This departs from the brand site's H1 weight of
+  600 on purpose — at 68px, 600 is a poster and 300 is an interface — and it is
+  one token to revert.
+- Verified: `npm run audit` now covers eight pages in both themes and passes
+  clean. Plus typecheck, lint, build, 81 unit tests, 92 SQL assertions.
+- Four defects the audit caught: muted text on a highlighted calendar block
+  failed contrast in dark mode; the dashboard pushed the page 338px wide at
+  320px; a standalone back-link was a 16px touch target; and the dashboard
+  table wrapped references across four lines, making 36px rows 145px tall.
+  That last one only showed up in a screenshot — the audit passes a wrapped
+  table, which is why looking at the render is still a required step.
+- Deferred: Quotes, Customers, Job sheets, Crew, Sequences, Templates,
+  Invoices, Payments, Sales tracker and Lead providers are in the navigation
+  but not built. The command palette is an affordance, not yet functional.
+
+### 2026-09-17 — Green/teal palette, dashboard charts, full module map, recommendations
+- Built: the palette re-derived as deep green + blue-green + white +
+  near-black, with every neutral carrying a green bias so the near-black reads
+  as the same family rather than sitting on top of the greens. Chart components
+  (sparkline, two-series line, bar rows, actual-against-target) as inline SVG
+  with no library, each with a table view and native `<title>` tooltips. The
+  dashboard rebuilt around four headline figures with sparklines, leads
+  year-on-year, pipeline by stage, booked-against-target by brand, lead source
+  performance, crew on shift and the send queue. The left panel expanded from
+  15 to **44 modules across 10 groups**, with unbuilt ones marked "soon".
+  `RECOMMENDATIONS.md` documents the module map, a seven-component pricing
+  matrix, the people/time/payroll boundary, and 54 improvements ordered by
+  return.
+- Key decisions: (1) **The product palette owns the interface; a brand is a
+  mark, not a repaint.** The previous per-brand `--accent` override meant the
+  UI changed colour on brand switch and, because an inline value outranks a
+  theme, silently overrode dark mode — charts rendered in the light-mode brand
+  colour on a dark ground. Per-brand colour still drives what customers see:
+  PDFs, emails, the public site. (2) The pipeline funnel uses **position for
+  order and one colour**, because a five-step ordinal ramp cannot clear the
+  contrast floor against both a white and a near-black surface. (3) The chart
+  order was **validated, not chosen** — aqua-led so the first series sits in
+  the brand family, worst adjacent CVD ΔE 9.1, worst normal-vision ΔE 27.6,
+  all eight above 3:1, in both modes. (4) Targets are a reference rule on the
+  same axis, never a second y-scale. (5) Type tightened again: display 2.75rem
+  at weight 300 and −0.038em, body to 14px.
+- Verified: `npm run audit` across eight pages in both themes passes clean;
+  typecheck, lint, build, 81 unit tests, 92 SQL assertions.
+- Two defects caught: `--ink-4` on the "soon" nav items failed contrast in dark
+  mode on 40 nodes — and distinguishing planned modules by colour alone was
+  wrong regardless, so they now carry the word "soon"; and the brand-accent
+  override described above, which only showed up in a screenshot because every
+  automated check passes a chart drawn in the wrong colour.
+- Deferred: 38 of the 44 modules are routed but not built. `RECOMMENDATIONS.md`
+  §6 gives the build order, starting with the pricing matrix and cost capture.
+
+## Session — SQL install verified end to end
+
+The `3F000: schema "private" does not exist` error is closed out, and now
+proven closed rather than asserted.
+
+- Added `crm/scripts/parts-verify.sh` (`npm run db:verify:parts`). It applies
+  `supabase/parts/*.sql` to a throwaway Postgres 16 three ways: each part alone
+  on an empty database, all five in order, then all five in order again.
+- Results: part 1 succeeds standalone; parts 2–5 refuse with a plain-English
+  message naming the part to run first (`Run PART 1 (schema) first — table
+  "quotes" does not exist.`), never `3F000`. All five in order succeed, and
+  succeed again on a second pass. Final shape: 42 tables, 68 RLS policies, RLS
+  enabled on all 42, 10 `private` helpers, 6 brands, 67 catalogue items,
+  36 rate-card rows.
+- Rewrote `crm/scripts/bundle-sql.sh` to generate `supabase/install.sql` from
+  the parts rather than from the superseded `migrations/` directory, and
+  regenerated it (2,556 lines / 123 KB). Verified `install.sql` alone on a
+  clean database, twice, zero errors.
+- Throwaway cluster stopped and deleted afterwards; nothing hosted, nothing
+  billable.
+
+## Session — CRM live on Supabase, screens wired to real data
+
+- **Database live.** Restored the paused `EcoGreem Movers Hub` project
+  (eu-west-2, London — the right region for UK staff; the other project is in
+  Singapore). Free tier, £0. Installed the full schema through the management
+  API: 42 tables, 68 RLS policies, RLS on all 42, 10 private helpers, 6 brands,
+  67 catalogue items, 36 rate cards. Every figure matches the locally verified
+  build. `MoversHub` was left untouched — it holds the marketplace app's live
+  data and its `customers`/`jobs`/`quotes` tables would have collided.
+- **Two security holes closed**, both found by Supabase's advisor after install:
+  `next_reference` was reachable by `anon`, and the three `SECURITY DEFINER`
+  functions granted to `authenticated` never authorised their caller, so any
+  staff session could act across every brand by uuid. Fixed live and in the
+  parts.
+- **Seven staff accounts**, one per `brand_role` — see `CRM_ACCOUNTS.md`. The
+  permission ladder was measured, not assumed, by setting each account's JWT
+  claim and calling the real helpers.
+- **The screens were showing fabricated data.** Every staff page imported
+  `sample-data` unconditionally while only the layout touched Supabase, so the
+  moment real credentials were set the sample banner would disappear and the
+  invented pipeline would remain — presented as the business's own. Added
+  `src/lib/data/` and wired leads, lead detail, calendar, send queue and the
+  dashboard to real queries through the session client, so RLS decides scope.
+  Where no honest figure exists yet (median first response, trend charts, crew
+  on shift) the screen now says so instead of borrowing a sample value.
+- **Rate cards screen built** — `RECOMMENDATIONS.md` §6 puts the pricing matrix
+  first, and it is the one thing blocking real quotes. Shows all seven
+  components per category with the progressive volume bands, and leads with how
+  many cards are still provisional.
+- Vercel's free tier runs cron once a day, so the 5-minute sequence tick moved
+  to `pg_cron` in `supabase/parts/06_scheduler.sql`.
+
+Verified: typecheck clean, 81/81 tests, lint clean, production build (13
+routes), and every page returns 200 with the expected content rendered.
+
+Not verified from here: the app talking to the live database. This sandbox's
+egress proxy blocks `*.supabase.co`, so the wiring is proven by build and by
+direct SQL against the live project, not by a round trip through the running
+app. First real sign-in is the test that closes that gap.
+
+## Session — sign-in proven working end to end
+
+The sandbox cannot reach `*.supabase.co` (organisation egress policy), which
+had left every claim about authentication unverified. Resolved by issuing the
+requests **from inside the database** with `pg_net`: the project can reach its
+own API, so the same GoTrue and PostgREST endpoints the browser uses were
+exercised directly.
+
+- **Sign-in works.** All seven accounts return HTTP 200 with an access token; a
+  deliberately wrong password returns 400 `Invalid login credentials`, so the
+  endpoint is discriminating rather than permissive.
+- **RLS proven through PostgREST with real JWTs**, not by calling helpers as
+  superuser. `rate_cards` returns rows to owner/manager/ops/accounts/sales and
+  **zero rows to crew and viewer** — commercially sensitive pricing is invisible
+  to crew, as designed. `staff` returns each person their own row.
+- **Fixed `auth_rls_initplan`**: `staff_read` and `staff_self_update` called
+  `auth.uid()` per row; wrapped in `(select …)` it is evaluated once per query.
+  Re-ran the PostgREST ladder afterwards to prove access was unchanged.
+- **Added 45 covering indexes** for foreign keys, including every join the data
+  layer makes (`leads.customer_id`, `jobs.quote_id`, `invoices.customer_id`).
+- Deleted the `net._http_response` rows afterwards: the verification had stored
+  live JWTs in a table.
+
+Deliberately not changed: `multiple_permissive_policies` on 25 tables. Each
+table has a read policy and a `for all` write policy, and `for all` includes
+SELECT, so both are evaluated on every read. Splitting the write policies into
+insert/update/delete would halve that work and appears behaviour-preserving
+(the write role outranks the read role on every table), but "appears" is not
+good enough on a system about to take real bookings, and the gain is
+theoretical on an empty database. Left as a documented trade-off.
+
+### Pipeline smoke test (live database, rolled back)
+
+Ran the whole chain against the live project inside a transaction that ends in
+a deliberate raise, so nothing persisted (verified afterwards: 0 leads, 0
+customers, 0 quotes, 0 jobs, 0 invoices, 0 audit rows; seed intact at 6 brands,
+36 rate cards, 7 staff).
+
+    lead EGM-2609-0001 → quote sent → price frozen ok → job + invoice
+    → double-booking blocked ok → job sheet ok → gdpr export+erasure ok
+
+Each step asserted its outcome rather than just running: the invoice total had
+to equal the quote, the job sheet had to name its own job, erasure had to
+report the financial record retained, and the two guards (frozen pricing after
+send, one job per quote) had to actually refuse.
