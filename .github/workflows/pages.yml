@@ -1,0 +1,50 @@
+# Publishes docs/ to GitHub Pages.
+#
+# The repository is public, so Pages is free here. `enablement: true` turns
+# Pages on from inside the run when it is still off, which is why this exists
+# as a workflow rather than a settings change — nobody has to click anything.
+#
+# What gets published is docs/index.html: a login form plus read-only tables.
+# It carries the project URL and the publishable (anon) key, both of which are
+# designed to be public; every row it can reach is decided by row level
+# security against the signed-in staff account, not by this page.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and never cancel one halfway: a cancelled Pages
+# deploy can leave the site serving the previous build with no warning.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
