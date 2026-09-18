@@ -2036,3 +2036,18 @@ insert/update/delete would halve that work and appears behaviour-preserving
 (the write role outranks the read role on every table), but "appears" is not
 good enough on a system about to take real bookings, and the gain is
 theoretical on an empty database. Left as a documented trade-off.
+
+### Pipeline smoke test (live database, rolled back)
+
+Ran the whole chain against the live project inside a transaction that ends in
+a deliberate raise, so nothing persisted (verified afterwards: 0 leads, 0
+customers, 0 quotes, 0 jobs, 0 invoices, 0 audit rows; seed intact at 6 brands,
+36 rate cards, 7 staff).
+
+    lead EGM-2609-0001 → quote sent → price frozen ok → job + invoice
+    → double-booking blocked ok → job sheet ok → gdpr export+erasure ok
+
+Each step asserted its outcome rather than just running: the invoice total had
+to equal the quote, the job sheet had to name its own job, erasure had to
+report the financial record retained, and the two guards (frozen pricing after
+send, one job per quote) had to actually refuse.
