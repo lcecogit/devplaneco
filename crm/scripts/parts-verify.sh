@@ -10,7 +10,7 @@ PGBIN=${PGBIN:-/usr/lib/postgresql/16/bin}
 PGSOCK=${PGSOCK:-/tmp/pgt}
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SHIM="$ROOT/tests/db/00_supabase_shim.sql"
-PARTS=("$ROOT"/supabase/parts/*.sql)
+PARTS=("$ROOT"/supabase/parts/0[1-5]_*.sql)
 
 pq() { command psql -h "$PGSOCK" -U postgres -v ON_ERROR_STOP=1 "$@"; }
 fresh() {

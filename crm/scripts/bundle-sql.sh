@@ -19,7 +19,7 @@ OUT="$ROOT/supabase/install.sql"
 --  supabase/parts/ one at a time instead, in numerical order.
 -- ==========================================================================
 HEADER
-  for f in "$ROOT"/supabase/parts/*.sql; do
+  for f in "$ROOT"/supabase/parts/0[1-5]_*.sql; do
     printf '\n\n-- ##########################################################################\n-- # %s\n-- ##########################################################################\n\n' "$(basename "$f")"
     cat "$f"
   done

@@ -105,8 +105,17 @@ Vercel, free Hobby tier.
    INTAKE_SIGNING_SECRET=<any long random string>
    ```
 
-   `vercel.json` registers a 5-minute cron that drives the chase sequences. It
-   returns 401 without `CRON_SECRET`, so set it or the sequences never run.
+   `/api/cron/tick` returns 401 without `CRON_SECRET`, so set it or the chase
+   sequences never run.
+
+   **On the free Hobby tier, Vercel runs cron jobs once per DAY.** `vercel.json`
+   therefore registers a daily tick as a backstop only. For the real 5-minute
+   cadence the sequences need, run `supabase/parts/06_scheduler.sql` in the
+   Supabase SQL Editor — it schedules the tick from inside Postgres using
+   pg_cron and pg_net, both included in Supabase's free plan. Edit the two
+   placeholders at the top of that file first (your deployment URL and the same
+   `CRON_SECRET`); it refuses to run until you do. On a paid Vercel plan you can
+   skip part 6 and put `*/5 * * * *` back in `vercel.json` instead.
 
 Providers are optional. With `STRIPE_SECRET_KEY`, `EMAIL_PROVIDER_API_KEY` and
 `WHATSAPP_ACCESS_TOKEN` all empty, the flows still work: payment links are
