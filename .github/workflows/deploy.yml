@@ -1,0 +1,123 @@
+name: Deploy CRM to Vercel
+
+# Deploys crm/ to Vercel. Needs one secret: VERCEL_TOKEN.
+#
+#   1. https://vercel.com/account/tokens → create a token
+#   2. GitHub → this repo → Settings → Secrets and variables → Actions
+#      → New repository secret → name VERCEL_TOKEN, paste the value
+#
+# The Supabase values below are the CRM project's publishable ones, which are
+# safe in a repository (row level security is the boundary, not the key). The
+# service_role key is NOT here and must never be: add SUPABASE_SECRET_KEY,
+# CRON_SECRET and INTAKE_SIGNING_SECRET as repository secrets too, and this
+# workflow passes them through without ever printing them.
+#
+# Root directory is pinned to crm/ here, which is the whole point: the
+# repository root is a different, older app pointed at a different database,
+# and deploying that one is why nobody could sign in.
+
+on:
+  push:
+    branches: [main]
+    paths: ['crm/**', '.github/workflows/deploy.yml']
+  workflow_dispatch:
+    inputs:
+      production:
+        description: 'Deploy to production (unticked = preview)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: vercel-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the token is configured
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "::error::VERCEL_TOKEN is not set. Add it under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install the Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Link (creates the project on first run, rooted at crm/)
+        working-directory: crm
+        run: |
+          vercel link --yes --project ecogreen-crm --token "${{ secrets.VERCEL_TOKEN }}"
+
+      - name: Push environment variables
+        working-directory: crm
+        env:
+          SUPABASE_URL: https://knbsosxsfvqslpimiznl.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_zpOcpMhB-LlJ4poQdJezEQ_sL4UCCM0
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          INTAKE_SIGNING_SECRET: ${{ secrets.INTAKE_SIGNING_SECRET }}
+        run: |
+          set -euo pipefail
+          put() {
+            # Remove then add, so re-running updates rather than erroring.
+            for target in production preview development; do
+              vercel env rm "$1" "$target" --yes \
+                --token "${{ secrets.VERCEL_TOKEN }}" >/dev/null 2>&1 || true
+              printf '%s' "$2" | vercel env add "$1" "$target" \
+                --token "${{ secrets.VERCEL_TOKEN }}" >/dev/null
+            done
+            echo "  set $1"
+          }
+          put NEXT_PUBLIC_SUPABASE_URL "$SUPABASE_URL"
+          put NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY "$SUPABASE_PUBLISHABLE_KEY"
+          [ -n "${SUPABASE_SECRET_KEY}" ]     && put SUPABASE_SECRET_KEY "$SUPABASE_SECRET_KEY"     || echo "  SUPABASE_SECRET_KEY not set, skipping"
+          [ -n "${CRON_SECRET}" ]             && put CRON_SECRET "$CRON_SECRET"                     || echo "  CRON_SECRET not set, skipping"
+          [ -n "${INTAKE_SIGNING_SECRET}" ]   && put INTAKE_SIGNING_SECRET "$INTAKE_SIGNING_SECRET" || echo "  INTAKE_SIGNING_SECRET not set, skipping"
+
+      - name: Build
+        working-directory: crm
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ inputs.production }}" = "true" ]; then
+            vercel build --prod --token "${{ secrets.VERCEL_TOKEN }}"
+          else
+            vercel build --token "${{ secrets.VERCEL_TOKEN }}"
+          fi
+
+      - name: Deploy
+        id: deploy
+        working-directory: crm
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ inputs.production }}" = "true" ]; then
+            url=$(vercel deploy --prebuilt --prod --token "${{ secrets.VERCEL_TOKEN }}")
+          else
+            url=$(vercel deploy --prebuilt --token "${{ secrets.VERCEL_TOKEN }}")
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "### Deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "$url" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check the deployment answers
+        run: |
+          set -euo pipefail
+          url="${{ steps.deploy.outputs.url }}"
+          for path in / /login; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$url$path")
+            echo "  $path -> $code"
+            [ "$code" = "200" ] || { echo "::error::$path returned $code"; exit 1; }
+          done
+          # The login page prints the Supabase project it was built against.
+          # If this string is missing, the env vars did not reach the build.
+          if curl -s "$url/login" | grep -q "knbsosxsfvqslpimiznl"; then
+            echo "  /login is wired to the CRM Supabase project"
+          else
+            echo "::error::/login is not showing the CRM project — the NEXT_PUBLIC_* values did not reach this build"
+            exit 1
+          fi
