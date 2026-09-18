@@ -1,13 +1,17 @@
 # Publishes docs/ to GitHub Pages.
 #
-# The repository is public, so Pages is free here. `enablement: true` turns
-# Pages on from inside the run when it is still off, which is why this exists
-# as a workflow rather than a settings change — nobody has to click anything.
-#
 # What gets published is docs/index.html: a login form plus read-only tables.
 # It carries the project URL and the publishable (anon) key, both of which are
 # designed to be public; every row it can reach is decided by row level
 # security against the signed-in staff account, not by this page.
+#
+# Pages has to be switched on in repository settings first — the workflow
+# token is refused the administration scope that creating a Pages site needs,
+# so no workflow can do it. Settings offers two sources and both serve this
+# folder: "Deploy from a branch" (main, /docs) needs nothing else, and
+# "GitHub Actions" needs this file. The gate below works out which one is
+# configured so that the wrong choice, or no choice yet, leaves the run green
+# instead of failing on every push.
 name: Pages
 
 on:
@@ -30,7 +34,42 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      build_type: ${{ steps.pages.outputs.build_type }}
+    steps:
+      - id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # 404 here means Pages has never been enabled, which is a state to
+          # report rather than an error: -i keeps gh quiet about the status.
+          build_type=$(gh api "repos/${{ github.repository }}/pages" \
+            --jq '.build_type // ""' 2>/dev/null || true)
+          echo "build_type=$build_type" >> "$GITHUB_OUTPUT"
+
+          case "$build_type" in
+            workflow)
+              echo "Pages builds from Actions — deploying docs/." >> "$GITHUB_STEP_SUMMARY" ;;
+            legacy)
+              echo "Pages builds from a branch, so it serves docs/ by itself." \
+                >> "$GITHUB_STEP_SUMMARY" ;;
+            *)
+              {
+                echo "### Pages is not enabled"
+                echo
+                echo "The console in \`docs/\` has nowhere to be served from."
+                echo "Turn it on at **Settings -> Pages**, either source:"
+                echo
+                echo "- *Deploy from a branch*: \`main\`, folder \`/docs\` — live in about a minute."
+                echo "- *GitHub Actions*: re-run this workflow afterwards."
+              } >> "$GITHUB_STEP_SUMMARY" ;;
+          esac
+
   deploy:
+    needs: check
+    if: needs.check.outputs.build_type == 'workflow'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -39,8 +78,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
