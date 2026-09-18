@@ -96,10 +96,23 @@ try {
   });
   const body = await r.json();
   if (r.ok && body.access_token) { token = body.access_token; ok(`signed in as ${email}`); }
-  else bad(`sign-in refused (${r.status}): ${body.error_description ?? body.msg ?? JSON.stringify(body)}`,
-           body.error_code === "email_not_confirmed"
-             ? "confirm the address: update auth.users set email_confirmed_at = now() where email = '…'"
-             : "check the password, or reset it in Supabase → Authentication → Users");
+  else {
+    const detail = body.error_description ?? body.msg ?? body.message ?? JSON.stringify(body);
+    let fix = "check the password, or reset it in Supabase → Authentication → Users";
+    if (body.error_code === "email_not_confirmed")
+      fix = "update auth.users set email_confirmed_at = now() where email = '…'";
+    else if (r.status === 500)
+      // The signature of an account inserted by hand without the '' token
+      // columns: GoTrue reads them into non-nullable Go strings and blows up
+      // before it ever checks the password.
+      fix = "a 500 here usually means NULL token columns on a hand-inserted account — " +
+            "run section 2 of supabase/auth-accounts.sql to repair every account";
+    else if (r.status === 400 && /disabled/i.test(detail))
+      fix = "enable email sign-in: Supabase → Authentication → Providers → Email";
+    else if (r.status === 429)
+      fix = "rate limited by too many attempts — wait a few minutes and try again";
+    bad(`sign-in refused (${r.status}): ${detail}`, fix);
+  }
 } catch (e) {
   bad(`sign-in threw — ${e.message}`);
 }

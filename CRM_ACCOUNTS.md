@@ -41,6 +41,22 @@ Crew and readonly look identical at brand level by design: crew are separated
 by assignment (`private.is_assigned_to_job`), not by brand rank, and crew rank
 clears `vehicles_read` where readonly does not.
 
+## If sign-in returns a 500
+
+The accounts in this file were created by direct SQL insert, and
+`auth.users.confirmation_token`, `recovery_token`, `email_change` and
+`email_change_token_new` have **no default** and are nullable. GoTrue reads
+them into non-nullable Go strings, so a NULL makes `/auth/v1/token` fail with
+`converting NULL to string is unsupported` — a 500 on every sign-in, for every
+account, with nothing in the UI explaining it.
+
+This was hit and fixed on 18 Sep. `supabase/auth-accounts.sql` section 2
+repairs it and is safe to re-run; section 4 verifies every column GoTrue needs.
+`npm run doctor` names it if it ever comes back.
+
+Prefer **Supabase → Authentication → Add user** for real staff: it writes a row
+GoTrue is happy with, and you only need the staff/brand-access link below.
+
 ## Creating more
 
 Do **not** insert into `auth.users` by hand for real staff — use Supabase →
