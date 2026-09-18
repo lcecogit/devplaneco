@@ -1,3 +1,23 @@
+/** Build-time guard for the one deployment mistake this repo invites.
+ *
+ *  The repository root is itself a deployable Next.js app (the older
+ *  marketplace site) and carries .env / .env.production pointing at a
+ *  DIFFERENT Supabase project. A CRM deployment whose root directory is not
+ *  `crm` therefore builds the wrong app against the wrong database, and the
+ *  only symptom is that nobody can sign in. Warn loudly at build time rather
+ *  than leaving it to be discovered at the login screen. */
+const MARKETPLACE_REF = "fkowixrwiqhlvuqphqst";
+const configuredUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+if (configuredUrl?.includes(MARKETPLACE_REF)) {
+  console.warn(
+    `\n\x1b[31m  WARNING\x1b[0m  This CRM build is pointed at Supabase project ` +
+      `"${MARKETPLACE_REF}", which belongs to the marketplace app, not the CRM.\n` +
+      `           Staff accounts do not exist there and sign-in will fail.\n` +
+      `           Set the deployment's root directory to \`crm\` and give it the CRM ` +
+      `project's URL and key.\n`,
+  );
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,

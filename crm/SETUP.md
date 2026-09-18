@@ -154,3 +154,64 @@ rather than guessed — a stale TfL rate loses money on every London job.
 | `DESIGN.md` | The design system and the craft gate every screen must pass |
 | `SPEC.md` | What is built, what is not, and the acceptance criteria |
 | `PROGRESS.md` | Session-by-session log of what changed and why |
+
+---
+
+## Launch checklist
+
+Run `npm run doctor` at any point — it checks configuration, reachability, a
+real sign-in and what that account can see through RLS, and names the fix for
+whatever it finds.
+
+### 1. Local first (2 minutes, proves the credentials)
+
+```bash
+cd crm
+npm install
+npm run doctor -- owner@ecogreenmovers.co.uk '<password>'
+npm run dev            # http://localhost:3000/login
+```
+
+`.env.local` already points at the live CRM project. Expect empty leads and
+jobs — the database is genuinely empty, and that is the correct state.
+
+### 2. Deploy to Vercel (free Hobby tier)
+
+Import the repository, then **before the first build**:
+
+| Setting | Value |
+|---|---|
+| **Root Directory** | **`crm`** — this is the one that breaks logins |
+| Framework | Next.js (detected) |
+
+**Why the root directory matters.** The repository root is *also* a deployable
+Next.js app — the older marketplace site — and it carries `.env` and
+`.env.production` pointing at a different Supabase project. Deploy from the
+root and you ship the wrong app against a database where no CRM staff account
+exists. The only symptom is that nobody can sign in. The CRM's `next.config.mjs`
+warns at build time if it sees that project's URL.
+
+Environment variables (Production, Preview and Development):
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://knbsosxsfvqslpimiznl.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_zpOcpMhB-LlJ4poQdJezEQ_sL4UCCM0
+SUPABASE_SECRET_KEY=<Supabase → Settings → API Keys → service_role>
+CRON_SECRET=<long random string>
+INTAKE_SIGNING_SECRET=<long random string>
+```
+
+**`NEXT_PUBLIC_*` values are inlined at build time.** Adding them after a deploy
+does nothing until you redeploy. If sign-in behaves oddly, redeploy before
+debugging anything else — `/login` names this itself if the build has no
+configuration.
+
+### 3. After the first successful sign-in
+
+1. Run `supabase/parts/06_scheduler.sql` with your deployed URL and the same
+   `CRON_SECRET`, so the chase sequences tick every 5 minutes. Vercel's free
+   tier only runs cron once a day.
+2. Rotate the seeded staff passwords (`CRM_ACCOUNTS.md`) and delete the roles
+   you do not need.
+3. Sign off the rate cards. All 36 are `provisional = true`, and every quote
+   computed from them will be wrong until someone confirms the real numbers.

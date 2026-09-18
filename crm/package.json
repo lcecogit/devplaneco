@@ -15,7 +15,8 @@
     "types:generate": "supabase gen types typescript --schema public > src/lib/database.types.ts",
     "audit": "node scripts/audit.mjs .audit",
     "sql:bundle": "bash scripts/bundle-sql.sh",
-    "db:verify:parts": "bash scripts/parts-verify.sh"
+    "db:verify:parts": "bash scripts/parts-verify.sh",
+    "doctor": "node scripts/doctor.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
