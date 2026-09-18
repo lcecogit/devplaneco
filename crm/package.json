@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/**/*.test.ts",
+    "test": "node --import tsx --test tests/*.test.ts",
     "check": "npm run typecheck && npm run test",
     "seed:generate": "tsx scripts/generate-seed-sql.ts",
     "db:verify": "bash scripts/db-verify.sh",
