@@ -889,6 +889,65 @@ begin
   end loop;
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- 11. Covering indexes for foreign keys
+--     Postgres indexes the referenced side of a foreign key, never the
+--     referencing side. Without these, every lead -> customer or job -> quote
+--     join is a sequential scan, and a cascading delete has to scan the child
+--     table. Supabase's performance advisor flags all of them.
+-- ---------------------------------------------------------------------------
+create index if not exists leads_customer_idx            on leads (customer_id);
+create index if not exists leads_service_idx             on leads (service_id);
+create index if not exists leads_source_idx              on leads (source_id);
+create index if not exists leads_branch_idx              on leads (branch_id);
+create index if not exists leads_provider_idx            on leads (provider_id);
+create index if not exists leads_duplicate_idx           on leads (duplicate_of_lead_id);
+create index if not exists leads_overlap_idx             on leads (cross_brand_overlap_lead_id);
+create index if not exists leads_lost_reason_idx         on leads (lost_reason_id);
+create index if not exists lead_events_actor_idx         on lead_events (actor_staff_id);
+
+create index if not exists quotes_rate_card_idx          on quotes (rate_card_id);
+create index if not exists quotes_prepared_by_idx        on quotes (prepared_by_staff_id);
+create index if not exists quotes_superseded_by_idx      on quotes (superseded_by_quote_id);
+create index if not exists quote_items_item_idx          on quote_items (item_slug);
+create index if not exists quote_items_room_idx          on quote_items (room_slug);
+
+create index if not exists jobs_lead_idx                 on jobs (lead_id);
+create index if not exists jobs_quote_idx                on jobs (quote_id);
+create index if not exists jobs_branch_idx               on jobs (branch_id);
+create index if not exists job_assignments_assigned_by_idx on job_assignments (assigned_by_staff_id);
+create index if not exists job_sheets_generated_by_idx   on job_sheets (generated_by_staff_id);
+
+create index if not exists invoices_customer_idx         on invoices (customer_id);
+create index if not exists invoices_job_idx              on invoices (job_id);
+create index if not exists invoices_organisation_idx     on invoices (organisation_id);
+create index if not exists payments_brand_idx            on payments (brand_id);
+create index if not exists payments_customer_idx         on payments (customer_id);
+create index if not exists payments_quote_idx            on payments (quote_id);
+create index if not exists payments_reconciled_by_idx    on payments (reconciled_by_staff_id);
+create index if not exists payment_links_brand_idx       on payment_links (brand_id);
+
+create index if not exists customers_organisation_idx    on customers (organisation_id);
+create index if not exists organisations_brand_idx       on organisations (brand_id);
+create index if not exists staff_brand_access_brand_idx  on staff_brand_access (brand_id);
+
+create index if not exists outbox_customer_idx           on outbox (customer_id);
+create index if not exists outbox_enrolment_idx          on outbox (enrolment_id);
+create index if not exists sequence_enrolments_brand_idx on sequence_enrolments (brand_id);
+create index if not exists sequence_enrolments_customer_idx on sequence_enrolments (customer_id);
+create index if not exists sequences_brand_idx           on sequences (brand_id);
+create index if not exists message_templates_brand_idx   on message_templates (brand_id);
+create index if not exists message_log_brand_idx         on message_log (brand_id);
+create index if not exists message_log_outbox_idx        on message_log (outbox_id);
+
+create index if not exists attendance_brand_idx          on attendance (brand_id);
+create index if not exists attendance_job_idx            on attendance (job_id);
+create index if not exists sales_targets_staff_idx       on sales_targets (staff_id);
+create index if not exists audit_log_brand_idx           on audit_log (brand_id);
+create index if not exists data_requests_customer_idx    on data_requests (customer_id);
+create index if not exists data_requests_performed_by_idx on data_requests (performed_by_staff_id);
+create index if not exists partial_submissions_lead_idx  on partial_submissions (converted_lead_id);
+
 
 -- ##########################################################################
 -- # 02_integrity.sql
@@ -1261,7 +1320,12 @@ alter table staff enable row level security;
 drop policy if exists staff_read on staff;
 create policy staff_read on staff for select to authenticated
   using (
-    auth_user_id = auth.uid()
+    -- (select auth.uid()) rather than auth.uid(): as a bare call Postgres
+    -- re-evaluates it once per ROW, and this policy compares every staff row
+    -- against the caller. Wrapped in a scalar subquery it becomes an InitPlan,
+    -- evaluated once per query. Same semantics, and Supabase's linter flags
+    -- the bare form.
+    auth_user_id = (select auth.uid())
     or private.is_platform_admin()
     or exists (
       select 1 from staff_brand_access a
@@ -1271,7 +1335,8 @@ create policy staff_read on staff for select to authenticated
   );
 drop policy if exists staff_self_update on staff;
 create policy staff_self_update on staff for update to authenticated
-  using (auth_user_id = auth.uid()) with check (auth_user_id = auth.uid());
+  using (auth_user_id = (select auth.uid()))
+  with check (auth_user_id = (select auth.uid()));
 drop policy if exists staff_admin_write on staff;
 create policy staff_admin_write on staff for all to authenticated
   using (private.is_platform_admin()) with check (private.is_platform_admin());

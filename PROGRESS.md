@@ -2005,3 +2005,34 @@ Not verified from here: the app talking to the live database. This sandbox's
 egress proxy blocks `*.supabase.co`, so the wiring is proven by build and by
 direct SQL against the live project, not by a round trip through the running
 app. First real sign-in is the test that closes that gap.
+
+## Session — sign-in proven working end to end
+
+The sandbox cannot reach `*.supabase.co` (organisation egress policy), which
+had left every claim about authentication unverified. Resolved by issuing the
+requests **from inside the database** with `pg_net`: the project can reach its
+own API, so the same GoTrue and PostgREST endpoints the browser uses were
+exercised directly.
+
+- **Sign-in works.** All seven accounts return HTTP 200 with an access token; a
+  deliberately wrong password returns 400 `Invalid login credentials`, so the
+  endpoint is discriminating rather than permissive.
+- **RLS proven through PostgREST with real JWTs**, not by calling helpers as
+  superuser. `rate_cards` returns rows to owner/manager/ops/accounts/sales and
+  **zero rows to crew and viewer** — commercially sensitive pricing is invisible
+  to crew, as designed. `staff` returns each person their own row.
+- **Fixed `auth_rls_initplan`**: `staff_read` and `staff_self_update` called
+  `auth.uid()` per row; wrapped in `(select …)` it is evaluated once per query.
+  Re-ran the PostgREST ladder afterwards to prove access was unchanged.
+- **Added 45 covering indexes** for foreign keys, including every join the data
+  layer makes (`leads.customer_id`, `jobs.quote_id`, `invoices.customer_id`).
+- Deleted the `net._http_response` rows afterwards: the verification had stored
+  live JWTs in a table.
+
+Deliberately not changed: `multiple_permissive_policies` on 25 tables. Each
+table has a read policy and a `for all` write policy, and `for all` includes
+SELECT, so both are evaluated on every read. Splitting the write policies into
+insert/update/delete would halve that work and appears behaviour-preserving
+(the write role outranks the read role on every table), but "appears" is not
+good enough on a system about to take real bookings, and the gain is
+theoretical on an empty database. Left as a documented trade-off.

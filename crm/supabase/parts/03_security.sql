@@ -180,7 +180,12 @@ alter table staff enable row level security;
 drop policy if exists staff_read on staff;
 create policy staff_read on staff for select to authenticated
   using (
-    auth_user_id = auth.uid()
+    -- (select auth.uid()) rather than auth.uid(): as a bare call Postgres
+    -- re-evaluates it once per ROW, and this policy compares every staff row
+    -- against the caller. Wrapped in a scalar subquery it becomes an InitPlan,
+    -- evaluated once per query. Same semantics, and Supabase's linter flags
+    -- the bare form.
+    auth_user_id = (select auth.uid())
     or private.is_platform_admin()
     or exists (
       select 1 from staff_brand_access a
@@ -190,7 +195,8 @@ create policy staff_read on staff for select to authenticated
   );
 drop policy if exists staff_self_update on staff;
 create policy staff_self_update on staff for update to authenticated
-  using (auth_user_id = auth.uid()) with check (auth_user_id = auth.uid());
+  using (auth_user_id = (select auth.uid()))
+  with check (auth_user_id = (select auth.uid()));
 drop policy if exists staff_admin_write on staff;
 create policy staff_admin_write on staff for all to authenticated
   using (private.is_platform_admin()) with check (private.is_platform_admin());
