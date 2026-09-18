@@ -1965,3 +1965,43 @@ proven closed rather than asserted.
   clean database, twice, zero errors.
 - Throwaway cluster stopped and deleted afterwards; nothing hosted, nothing
   billable.
+
+## Session — CRM live on Supabase, screens wired to real data
+
+- **Database live.** Restored the paused `EcoGreem Movers Hub` project
+  (eu-west-2, London — the right region for UK staff; the other project is in
+  Singapore). Free tier, £0. Installed the full schema through the management
+  API: 42 tables, 68 RLS policies, RLS on all 42, 10 private helpers, 6 brands,
+  67 catalogue items, 36 rate cards. Every figure matches the locally verified
+  build. `MoversHub` was left untouched — it holds the marketplace app's live
+  data and its `customers`/`jobs`/`quotes` tables would have collided.
+- **Two security holes closed**, both found by Supabase's advisor after install:
+  `next_reference` was reachable by `anon`, and the three `SECURITY DEFINER`
+  functions granted to `authenticated` never authorised their caller, so any
+  staff session could act across every brand by uuid. Fixed live and in the
+  parts.
+- **Seven staff accounts**, one per `brand_role` — see `CRM_ACCOUNTS.md`. The
+  permission ladder was measured, not assumed, by setting each account's JWT
+  claim and calling the real helpers.
+- **The screens were showing fabricated data.** Every staff page imported
+  `sample-data` unconditionally while only the layout touched Supabase, so the
+  moment real credentials were set the sample banner would disappear and the
+  invented pipeline would remain — presented as the business's own. Added
+  `src/lib/data/` and wired leads, lead detail, calendar, send queue and the
+  dashboard to real queries through the session client, so RLS decides scope.
+  Where no honest figure exists yet (median first response, trend charts, crew
+  on shift) the screen now says so instead of borrowing a sample value.
+- **Rate cards screen built** — `RECOMMENDATIONS.md` §6 puts the pricing matrix
+  first, and it is the one thing blocking real quotes. Shows all seven
+  components per category with the progressive volume bands, and leads with how
+  many cards are still provisional.
+- Vercel's free tier runs cron once a day, so the 5-minute sequence tick moved
+  to `pg_cron` in `supabase/parts/06_scheduler.sql`.
+
+Verified: typecheck clean, 81/81 tests, lint clean, production build (13
+routes), and every page returns 200 with the expected content rendered.
+
+Not verified from here: the app talking to the live database. This sandbox's
+egress proxy blocks `*.supabase.co`, so the wiring is proven by build and by
+direct SQL against the live project, not by a round trip through the running
+app. First real sign-in is the test that closes that gap.

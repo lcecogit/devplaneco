@@ -3,14 +3,17 @@ import { notFound } from "next/navigation";
 
 import { StatusBadge } from "@/components/crm/StatusBadge";
 import { formatDate, formatMoneyMinor, formatRelative } from "@/lib/format";
-import { sampleLeads, sampleQuoteLines, sampleTimeline } from "@/lib/sample-data";
+import { isSampleMode, sampleLeads, sampleQuoteLines, sampleTimeline } from "@/lib/sample-data";
+import { getLead } from "@/lib/data/leads";
 
 export const dynamic = "force-dynamic";
 
 const NOW = new Date("2026-09-17T09:00:00Z");
 
-export default function LeadDetailPage({ params }: { params: { id: string } }) {
-  const lead = sampleLeads.find((l) => l.id === params.id);
+export default async function LeadDetailPage({ params }: { params: { id: string } }) {
+  const lead = isSampleMode
+    ? sampleLeads.find((l) => l.id === params.id) ?? null
+    : await getLead(params.id);
   if (!lead) notFound();
 
   const net = sampleQuoteLines.reduce((total, line) => total + line.netMinor, 0);

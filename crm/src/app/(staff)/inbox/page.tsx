@@ -1,5 +1,6 @@
 import { formatRelative } from "@/lib/format";
-import { sampleOutbox } from "@/lib/sample-data";
+import { isSampleMode, sampleOutbox } from "@/lib/sample-data";
+import { getOutbox } from "@/lib/data/outbox";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Send queue" };
@@ -13,7 +14,9 @@ const NOW = new Date("2026-09-17T09:00:00Z");
  *  scheduler drafts the message, a person sends it, and the send is logged
  *  either way — so the pipeline reporting is the same before and after the API
  *  is connected. */
-export default function InboxPage() {
+export default async function InboxPage() {
+  const messages = isSampleMode ? sampleOutbox : await getOutbox();
+
   return (
     <div className="mx-auto w-full max-w-3xl">
       <header className="mb-6">
@@ -25,7 +28,7 @@ export default function InboxPage() {
       </header>
 
       <ul className="flex flex-col gap-px border border-hairline bg-hairline">
-        {sampleOutbox.map((message) => (
+        {messages.map((message) => (
           <li key={message.id} className="bg-surface-canvas p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <div>

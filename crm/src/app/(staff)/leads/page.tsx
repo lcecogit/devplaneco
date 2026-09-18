@@ -4,7 +4,8 @@ import { ScoreBar } from "@/components/crm/ScoreBar";
 import { StatusBadge } from "@/components/crm/StatusBadge";
 import { EmptyState, FilteredEmptyState } from "@/components/ui/EmptyState";
 import { formatDate, formatMoneyMinor, formatRelative } from "@/lib/format";
-import { sampleLeads } from "@/lib/sample-data";
+import { isSampleMode, sampleLeads } from "@/lib/sample-data";
+import { getLeads } from "@/lib/data/leads";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Leads" };
@@ -21,7 +22,7 @@ const FILTERS = [
   { key: "all", label: "All" },
 ] as const;
 
-export default function LeadsPage({
+export default async function LeadsPage({
   searchParams,
 }: {
   searchParams: { status?: string; owner?: string };
@@ -29,7 +30,12 @@ export default function LeadsPage({
   const status = searchParams.status ?? "open";
   const ownerFilter = searchParams.owner;
 
-  const rows = sampleLeads.filter((lead) => {
+  // Sample rows only when no database is connected. With one connected these
+  // must be the real leads: showing invented ones once the sample banner is
+  // gone would present fiction as the business's own pipeline.
+  const all = isSampleMode ? sampleLeads : await getLeads();
+
+  const rows = all.filter((lead) => {
     if (ownerFilter === "none" && lead.owner) return false;
     if (status === "all") return true;
     if (status === "open") return OPEN.includes(lead.status);
@@ -83,7 +89,7 @@ export default function LeadsPage({
           Unassigned
         </Link>
         <span className="ml-auto text-caption text-ink-3" data-numeric>
-          {rows.length} of {sampleLeads.length}
+          {rows.length} of {all.length}
         </span>
       </div>
 

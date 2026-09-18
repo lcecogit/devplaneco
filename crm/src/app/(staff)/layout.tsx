@@ -42,7 +42,7 @@ const NAV: readonly NavGroup[] = [
   {
     label: "Pricing",
     items: [
-      { href: "/rate-cards", label: "Rate cards", soon: true },
+      { href: "/rate-cards", label: "Rate cards" },
       { href: "/inventory", label: "Item catalogue", soon: true },
       { href: "/materials", label: "Packing materials", soon: true },
       { href: "/promos", label: "Promo codes", soon: true },

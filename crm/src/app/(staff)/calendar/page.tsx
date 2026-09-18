@@ -1,4 +1,5 @@
-import { sampleJobs } from "@/lib/sample-data";
+import { isSampleMode, sampleJobs } from "@/lib/sample-data";
+import { getJobs } from "@/lib/data/jobs";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Job calendar" };
@@ -20,7 +21,9 @@ const END_HOUR = 22;
  *  because the question this screen answers is "what is already on that day"
  *  — and a list cannot show a clash. Double-booking is rejected by a database
  *  constraint, not by this view; the view only has to make it obvious. */
-export default function CalendarPage() {
+export default async function CalendarPage() {
+  const jobs = isSampleMode ? sampleJobs : await getJobs();
+
   return (
     <div className="mx-auto w-full max-w-content">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -75,7 +78,7 @@ export default function CalendarPage() {
               {Array.from({ length: END_HOUR - START_HOUR }).map((_, i) => (
                 <div key={i} className="h-10 border-b border-hairline last:border-0" />
               ))}
-              {sampleJobs
+              {jobs
                 .filter((job) => job.start.startsWith(day.iso))
                 .map((job) => {
                   const start = new Date(job.start);
