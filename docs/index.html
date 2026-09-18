@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>EcoGreen CRM · Operations console</title>
+<!--
+  Static operations console for the EcoGreen Group CRM.
+
+  The full product is the Next.js app in crm/, which needs a Node host. This
+  page exists because that host is not yet reachable, and the team needs a
+  working, authenticated view of live CRM data in the meantime.
+
+  It holds no privileges. The browser signs in against Supabase Auth and
+  queries PostgREST with that session's own JWT, so exactly the same row level
+  security applies here as in the real application — a crew account sees no
+  rate cards on this page either. The key below is the publishable key: it is
+  shipped to every browser by design, and RLS, not the key, is the boundary.
+  The service-role key is never used and never sent.
+-->
+<style>
+  :root{
+    color-scheme: light;
+    --ink-1:#0a1711; --ink-2:#44544c; --ink-3:#5c6e65;
+    --canvas:#fff; --sunken:#f2f6f3; --line:rgb(10 23 17 / .12);
+    --accent:#0e4d34; --accent-text:#0e4d34; --on-accent:#fff;
+    --bad:#b3312e; --good:#10702a;
+  }
+  @media (prefers-color-scheme: dark){:root{
+    color-scheme: dark;
+    --ink-1:#eaf3ee; --ink-2:#9db3a9; --ink-3:#849c92;
+    --canvas:#071310; --sunken:#0d1e18; --line:rgb(157 179 169 / .16);
+    --accent:#34c79a; --accent-text:#5be0b8; --on-accent:#071310;
+    --bad:#ff8a80; --good:#4ad07a;
+  }}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--canvas);color:var(--ink-1);
+    font:400 15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px 16px 64px}
+  .login{max-width:380px;margin:56px auto}
+  h1{font-size:28px;line-height:1.15;letter-spacing:-.032em;font-weight:300;margin:0}
+  h2{font-size:16px;letter-spacing:-.014em;font-weight:500;margin:32px 0 10px}
+  p{color:var(--ink-2);margin:6px 0}
+  .muted{color:var(--ink-3);font-size:13px}
+  .banner{background:var(--sunken);border:1px solid var(--line);padding:12px 14px;
+    font-size:13px;color:var(--ink-2);margin-bottom:24px}
+  label{display:block;font-size:12px;font-weight:500;margin:14px 0 6px}
+  input{width:100%;height:44px;padding:0 14px;background:var(--canvas);color:var(--ink-1);
+    border:1px solid var(--line);font:inherit}
+  button{height:44px;padding:0 26px;background:var(--accent);color:var(--on-accent);
+    border:1px solid var(--accent);font:500 12px/1 Inter,sans-serif;letter-spacing:.1em;
+    text-transform:uppercase;cursor:pointer}
+  button.ghost{background:transparent;color:var(--ink-1);border-color:var(--line)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);
+    font-variant-numeric:tabular-nums slashed-zero}
+  th{color:var(--ink-2);font-weight:500;font-size:12px}
+  .err{color:var(--bad);font-size:13px}
+  .card{border:1px solid var(--line);padding:16px;margin-top:12px}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .pill{display:inline-block;border:1px solid var(--line);padding:2px 8px;font-size:11px;color:var(--ink-2)}
+  :focus-visible{outline:2px solid var(--accent-text);outline-offset:2px}
+  code{font-family:ui-monospace,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="login" class="login">
+    <h1>EcoGreen CRM</h1>
+    <p>Operations console. Staff accounts only.</p>
+    <form id="form">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="username" required>
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+      <div class="row" style="margin-top:18px">
+        <button id="go" type="submit">Sign in</button>
+      </div>
+      <p id="msg" class="err" role="status" aria-live="polite" style="margin-top:12px"></p>
+    </form>
+    <p class="muted" style="margin-top:28px">Signing in to <code id="proj"></code></p>
+  </div>
+
+  <div id="app" hidden>
+    <div class="row" style="justify-content:space-between">
+      <div><h1>EcoGreen CRM</h1><p id="who"></p></div>
+      <button class="ghost" id="out">Sign out</button>
+    </div>
+    <div class="banner">
+      Live data from the CRM database, filtered by your own permissions. Sign in
+      as <code>crew</code> and the rate cards disappear — that is row level
+      security, not this page hiding them. The full application (dashboard, lead
+      detail, calendar, send queue, rate-card editor) is the Next.js app.
+    </div>
+    <div id="content"></div>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+
+const URL_ = "https://knbsosxsfvqslpimiznl.supabase.co";
+const KEY  = "sb_publishable_zpOcpMhB-LlJ4poQdJezEQ_sL4UCCM0";
+const sb = createClient(URL_, KEY);
+
+const $ = (id) => document.getElementById(id);
+$("proj").textContent = new URL(URL_).hostname.split(".")[0];
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cell = (v) => (v === null || v === undefined || v === "" ? "—" : String(v));
+
+$("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("msg").textContent = ""; $("go").disabled = true;
+  try {
+    const { error } = await sb.auth.signInWithPassword({
+      email: $("email").value.trim(), password: $("password").value,
+    });
+    // Not "no such account": that would tell an attacker which addresses are staff.
+    if (error) { $("msg").textContent = "That email and password don't match. Check both and try again."; return; }
+    await show();
+  } catch (err) {
+    // Thrown rather than returned. Without this the button sits disabled saying nothing.
+    $("msg").textContent = "Could not reach the authentication service. " + (err?.message ?? "");
+  } finally { $("go").disabled = false; }
+});
+
+$("out").addEventListener("click", async () => { await sb.auth.signOut(); location.reload(); });
+
+async function show() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  $("login").hidden = true; $("app").hidden = false;
+
+  const { data: me } = await sb.from("staff")
+    .select("full_name, staff_brand_access(role, brands(name))")
+    .eq("auth_user_id", user.id).maybeSingle();
+  const access = me?.staff_brand_access?.[0];
+  $("who").innerHTML = me
+    ? esc(me.full_name) + ' <span class="pill">' + esc(access?.role ?? "no role") +
+      '</span> <span class="pill">' + esc(access?.brands?.name ?? "no brand") + "</span>"
+    : '<span class="err">Signed in, but no staff record is linked to this account.</span>';
+
+  $("content").innerHTML = (await Promise.all([
+    section("Rate cards", "rate_cards",
+      "service_category, currency, provisional, effective_from, brands(name)",
+      ["Brand","Category","From","Currency","State"],
+      r => [r.brands?.name, r.service_category, r.effective_from, r.currency,
+            r.provisional ? "Provisional" : "Confirmed"],
+      "Commercially sensitive: sales and above only."),
+    section("Leads", "leads",
+      "reference, status, move_date, origin_postcode, destination_postcode, brands(name)",
+      ["Reference","Brand","Status","Move date","From","To"],
+      r => [r.reference, r.brands?.name, r.status, r.move_date, r.origin_postcode, r.destination_postcode],
+      "Empty is correct on a fresh install — no enquiry has come in yet."),
+    section("Jobs", "jobs", "reference, status, scheduled_start, brands(name)",
+      ["Reference","Brand","Status","Scheduled"],
+      r => [r.reference, r.brands?.name, r.status, r.scheduled_start]),
+    section("Catalogue", "items", "name, room_slug, volume_ft3, crew_minutes, handling",
+      ["Item","Room","ft³","Crew min","Handling"],
+      r => [r.name, r.room_slug, r.volume_ft3, r.crew_minutes, r.handling], null, 15),
+    section("Brands", "brands", "code, name, primary_domain, brand_identity_confirmed",
+      ["Code","Name","Domain","Identity"],
+      r => [r.code, r.name, r.primary_domain, r.brand_identity_confirmed ? "confirmed" : "placeholder"]),
+  ])).join("");
+}
+
+async function section(title, table, select, heads, row, note, limit = 50) {
+  const { data, error, count } = await sb.from(table).select(select, { count: "exact" }).limit(limit);
+  let body;
+  if (error) body = '<p class="err">' + esc(error.message) + "</p>";
+  else if (!data || data.length === 0)
+    body = '<p class="muted">No rows visible to you' +
+      (count === 0 ? " — the table is empty." : " — row level security is filtering them out.") + "</p>";
+  else body = "<table><thead><tr>" + heads.map(h => "<th>" + esc(h) + "</th>").join("") +
+    "</tr></thead><tbody>" +
+    data.map(r => "<tr>" + row(r).map(c => "<td>" + esc(cell(c)) + "</td>").join("") + "</tr>").join("") +
+    "</tbody></table>";
+  return "<h2>" + esc(title) + ' <span class="pill">' + (count ?? 0) + "</span></h2>" +
+    (note ? '<p class="muted">' + esc(note) + "</p>" : "") + '<div class="card">' + body + "</div>";
+}
+
+const { data: { session } } = await sb.auth.getSession();
+if (session) await show();
+</script>
+</body>
+</html>
